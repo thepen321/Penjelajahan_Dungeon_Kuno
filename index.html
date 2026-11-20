@@ -1,0 +1,2538 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Eldoria Abyssal — Pixel Dungeon Extraction RPG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0d0b10;
+      --panel-bg: #17131d;
+      --panel-border: #3c2f4d;
+      --gold: #f5b942;
+      --crimson: #e03c52;
+      --emerald: #36c978;
+      --cyan: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      background-color: #070609;
+      color: #ede6f2;
+      font-family: 'VT323', monospace;
+      font-size: 19px;
+      overflow-x: hidden;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .font-pixel {
+      font-family: 'Press Start 2P', monospace;
+      line-height: 1.45;
+    }
+
+    .font-medieval {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Mobile-first App Shell */
+    #app-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1f1929 0%, #0d0b10 85%);
+      border-left: 2px solid #2b2238;
+      border-right: 2px solid #2b2238;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Crisp Pixel Canvas */
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Retro Bevel Buttons */
+    .btn-pixel {
+      position: relative;
+      border: 2px solid #594673;
+      background: linear-gradient(180deg, #2a2138 0%, #1a1424 100%);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), 0 4px 0 #09070c;
+      transition: transform 0.08s ease, filter 0.12s ease;
+      cursor: pointer;
+    }
+    .btn-pixel:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.08), 0 1px 0 #09070c;
+    }
+    .btn-pixel:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-gold {
+      border-color: #d99326;
+      background: linear-gradient(180deg, #6b4712 0%, #3d2607 100%);
+      color: #ffe39e;
+    }
+    .btn-crimson {
+      border-color: #b8283b;
+      background: linear-gradient(180deg, #631622 0%, #380b12 100%);
+      color: #ffd1d8;
+    }
+    .btn-emerald {
+      border-color: #269959;
+      background: linear-gradient(180deg, #155934 0%, #0b331d 100%);
+      color: #c7ffe0;
+    }
+    .btn-cyan {
+      border-color: #2589bd;
+      background: linear-gradient(180deg, #134a69 0%, #092738 100%);
+      color: #ccf0ff;
+    }
+
+    /* Rate Badges */
+    .rate-D, .rate-D- { color: #a3a3a3; border-color: #525252; background: #262626; }
+    .rate-C { color: #6ee7b7; border-color: #059669; background: #064e3b; }
+    .rate-B, .rate-B\+ { color: #60a5fa; border-color: #2563eb; background: #1e3a8a; }
+    .rate-A, .rate-A\+ { color: #c084fc; border-color: #9333ea; background: #4c1d95; }
+    .rate-S, .rate-S\+ { color: #fbbf24; border-color: #d97706; background: #78350f; }
+    .rate-SS, .rate-SS\+ { color: #f87171; border-color: #dc2626; background: #7f1d1d; }
+    .rate-SSS, .rate-SSS\+ {
+      color: #fff;
+      border-color: #f43f5e;
+      background: linear-gradient(90deg, #9333ea, #e11d48, #d97706);
+      text-shadow: 0 1px 2px #000;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #120f17; }
+    ::-webkit-scrollbar-thumb { background: #453659; border-radius: 3px; }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 8px rgba(245, 185, 66, 0.4); }
+      50% { box-shadow: 0 0 18px rgba(245, 185, 66, 0.85); }
+    }
+    .glow-gold { animation: pulseGlow 2s infinite; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .anim-shake { animation: shake 0.35s ease; }
+  </style>
+</head>
+<body>
+  <div id="app-shell">
+    <!-- TOP HEADER BAR -->
+    <header class="px-3 py-2.5 bg-[#120e18] border-b-2 border-[#322642] flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-2">
+        <div id="header-avatar" class="w-9 h-9 rounded border border-amber-500/60 bg-[#1e1829] flex items-center justify-center text-lg shadow-inner">
+          🛡️
+        </div>
+        <div>
+          <div class="font-medieval text-sm font-bold text-amber-300 tracking-wide leading-tight">ELDORIA ABYSSAL</div>
+          <div class="text-xs text-purple-300 flex items-center gap-2">
+            <span id="hdr-skin-name">Ksatria Eldoria</span>
+            <span>•</span>
+            <span class="text-emerald-400">Lv.<span id="hdr-career-lv">1</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="px-2.5 py-1 rounded bg-[#1f1929] border border-amber-500/40 flex items-center gap-1.5">
+          <span class="text-amber-400 text-base">🪙</span>
+          <span id="hdr-gold" class="font-bold text-amber-300 text-lg">250</span>
+        </div>
+        <button id="btn-sfx-toggle" onclick="SoundFX.toggleMute()" class="btn-pixel px-2 py-1.5 rounded text-xs font-bold text-emerald-300" title="Aktifkan / Matikan SFX">
+          🔊 SFX
+        </button>
+        <button onclick="openLoreModal()" class="btn-pixel px-2.5 py-1.5 rounded text-xs text-purple-200" title="Kisah & Panduan">
+          📜
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main id="main-container" class="flex-1 flex flex-col overflow-y-auto pb-4">
+      <!-- Views are dynamically rendered here -->
+    </main>
+
+    <!-- FLOATING TOAST / NOTIFICATION BANNER -->
+    <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-[440px] pointer-events-none flex flex-col gap-1.5"></div>
+
+    <!-- MODAL OVERLAY (For Item Inspection, Lore, Combat Item Picker, In-Game Bag) -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-40 hidden items-center justify-center p-3 backdrop-blur-xs">
+      <div id="modal-box" class="w-full max-w-[440px] bg-[#181320] border-2 border-[#4d3b66] rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="px-3.5 py-2.5 bg-[#221b2e] border-b border-[#3c2e52] flex items-center justify-between">
+          <h3 id="modal-title" class="font-medieval font-bold text-amber-300 text-base">Detail</h3>
+          <button onclick="closeModal()" class="text-gray-400 hover:text-white text-xl leading-none px-2">&times;</button>
+        </div>
+        <div id="modal-body" class="p-3.5 overflow-y-auto space-y-3 text-base"></div>
+        <div id="modal-footer" class="px-3.5 py-2.5 bg-[#130f1a] border-t border-[#2d223d] flex justify-end gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. RETRO-MODERN WEB AUDIO SYNTHESIZER (Zero external audio dependencies)
+       ========================================================================== */
+    const SoundFX = (() => {
+      let ctx = null;
+      let muted = false;
+
+      function ensureCtx() {
+        if (!ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) ctx = new AudioContext();
+        }
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      }
+
+      // Unlock AudioContext seamlessly on first mobile touch or click
+      ['touchstart', 'pointerdown', 'click'].forEach(evt => {
+        window.addEventListener(evt, ensureCtx, { once: true, passive: true });
+      });
+
+      function playTone(freq, type = 'square', duration = 0.12, vol = 0.08, slideTo = null, delay = 0) {
+        if (muted) return;
+        try {
+          ensureCtx();
+          if (!ctx) return;
+          const startTime = ctx.currentTime + delay;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, startTime);
+          if (slideTo) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), startTime + duration);
+          }
+          gain.gain.setValueAtTime(0.0001, startTime);
+          gain.gain.linearRampToValueAtTime(vol, startTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + duration + 0.01);
+        } catch (e) {}
+      }
+
+      function playNoise(duration = 0.12, vol = 0.07, filterFreq = 900, delay = 0) {
+        if (muted) return;
+        try {
+          ensureCtx();
+          if (!ctx) return;
+          const startTime = ctx.currentTime + delay;
+          const bufferSize = Math.floor(ctx.sampleRate * duration);
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const noise = ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(filterFreq, startTime);
+
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(vol, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          noise.start(startTime);
+          noise.stop(startTime + duration + 0.01);
+        } catch (e) {}
+      }
+
+      function updateToggleUI() {
+        const btn = document.getElementById('btn-sfx-toggle');
+        if (!btn) return;
+        if (muted) {
+          btn.textContent = '🔇 MUTE';
+          btn.className = 'btn-pixel px-2 py-1.5 rounded text-xs font-bold text-rose-400';
+        } else {
+          btn.textContent = '🔊 SFX';
+          btn.className = 'btn-pixel px-2 py-1.5 rounded text-xs font-bold text-emerald-300';
+        }
+      }
+
+      return {
+        isMuted: () => muted,
+        setMuted: (val) => {
+          muted = !!val;
+          updateToggleUI();
+        },
+        toggleMute: () => {
+          muted = !muted;
+          updateToggleUI();
+          if (!muted) {
+            ensureCtx();
+            playTone(580, 'square', 0.07, 0.06);
+          }
+        },
+        // 1. UI button/tab tap
+        click: () => playTone(560, 'square', 0.055, 0.05, 420),
+        // 2. Wooden dungeon door creak & thud
+        door: () => {
+          playTone(150, 'sawtooth', 0.14, 0.07, 95, 0);
+          playTone(95, 'triangle', 0.12, 0.09, 55, 0.12);
+        },
+        // 3. Descending footsteps echo on stairs
+        stairs: () => {
+          [260, 220, 185, 150].forEach((f, i) => {
+            playTone(f, 'triangle', 0.09, 0.07, f * 0.8, i * 0.085);
+          });
+        },
+        // 4. Sword slash + impact (heavier/deeper for higher tier weapons)
+        attack: (tierIndex = 0, isCrit = false) => {
+          const baseFreq = Math.max(110, 260 - tierIndex * 11);
+          playNoise(0.11, 0.09, 1400 - tierIndex * 40, 0);
+          playTone(baseFreq, 'sawtooth', 0.16, 0.1, 55, 0.02);
+          if (isCrit) {
+            playTone(520, 'square', 0.08, 0.09, 880, 0.06);
+            playTone(780, 'square', 0.14, 0.09, 1120, 0.12);
+          }
+        },
+        // 5. Black Flame Dragon: One Slash One Kill roaring flame slash
+        skill: () => {
+          playNoise(0.42, 0.13, 650, 0);
+          playTone(220, 'sawtooth', 0.35, 0.12, 48, 0.02);
+          playTone(440, 'square', 0.18, 0.1, 980, 0.08);
+          playTone(660, 'square', 0.25, 0.1, 1320, 0.18);
+        },
+        // 6. Monster strike / taking damage (metallic block vs heavy HP thud)
+        hit: (shieldOnly = false) => {
+          if (shieldOnly) {
+            playTone(720, 'triangle', 0.09, 0.09, 980, 0);
+            playTone(1180, 'sine', 0.14, 0.07, 640, 0.04);
+          } else {
+            playNoise(0.14, 0.1, 480, 0);
+            playTone(125, 'sawtooth', 0.22, 0.12, 42, 0);
+          }
+        },
+        // 7. Metallic shield raise / guard chime
+        defend: () => {
+          playTone(390, 'triangle', 0.1, 0.08, 520, 0);
+          playTone(660, 'sine', 0.16, 0.08, 780, 0.06);
+        },
+        // 8. Sparkly ascending arpeggio chime for consumables & revival
+        heal: () => {
+          [440, 554, 659, 880].forEach((f, i) => {
+            playTone(f, 'sine', 0.14, 0.075, null, i * 0.065);
+          });
+        },
+        // 9. Treasure chest chime (extra fanfare for S/SS/SSS rare items)
+        loot: (isHighTier = false) => {
+          const notes = isHighTier ? [523, 659, 784, 1046, 1318] : [523, 659, 784];
+          notes.forEach((f, i) => {
+            playTone(f, 'square', i === notes.length - 1 ? 0.22 : 0.09, 0.075, null, i * 0.075);
+          });
+        },
+        // 10. Double-coin clink when buying/selling or claiming achievements
+        coin: () => {
+          playTone(987, 'sine', 0.08, 0.08, null, 0);
+          playTone(1318, 'sine', 0.18, 0.08, null, 0.065);
+        },
+        // 11. Subtle ticking pulse when timer drops below 4 seconds
+        timerWarn: () => {
+          playTone(880, 'sine', 0.045, 0.04, 720, 0);
+        },
+        // 12. Retreating footsteps + whoosh when escaping
+        run: () => {
+          playNoise(0.18, 0.07, 1100, 0);
+          [320, 280, 350, 290].forEach((f, i) => {
+            playTone(f, 'triangle', 0.07, 0.06, f * 0.75, i * 0.06);
+          });
+        },
+        // 13. Ethereal ascending harmonic beam for Extraction light pillar
+        extract: () => {
+          [330, 440, 554, 659, 880, 1108, 1318].forEach((f, i) => {
+            playTone(f, 'sine', 0.32, 0.075, f * 1.03, i * 0.09);
+          });
+        },
+        // 14. Somber descending retro defeat melody
+        gameover: () => {
+          [311, 277, 246, 185].forEach((f, i) => {
+            playTone(f, 'sawtooth', 0.24, 0.085, f * 0.94, i * 0.15);
+          });
+        }
+      };
+    })();
+
+    /* ==========================================================================
+       2. GAME DATABASE: RATES, ITEMS, SKINS, MAPS, ACHIEVEMENTS
+       ========================================================================== */
+    const RATE_SLOTS = {
+      'D-': 1, 'D': 1,
+      'C': 3,
+      'B': 6, 'B+': 7,
+      'A': 12, 'A+': 13,
+      'S': 15, 'S+': 16,
+      'SS': 18, 'SS+': 19,
+      'SSS': 21, 'SSS+': 22
+    };
+
+    const RATE_ORDER = ['D-', 'D', 'C', 'B', 'B+', 'A', 'A+', 'S', 'S+', 'SS', 'SS+', 'SSS', 'SSS+'];
+
+    const ITEM_DB = {
+      // ================= WEAPONS (10) =================
+      wooden_sword: {
+        id: 'wooden_sword', name: 'Wooden Sword', type: 'weapon', rate: 'D', price: 10,
+        dmg: 10, icon: '🗡️', desc: 'Pedang latihan kayu ek tua. Ringan namun rapuh.'
+      },
+      stone_sword: {
+        id: 'stone_sword', name: 'Stone Sword', type: 'weapon', rate: 'C', price: 34,
+        dmg: 25, icon: '⚔️', desc: 'Pedang batu tempaan pandai besi desa.'
+      },
+      iron_sword: {
+        id: 'iron_sword', name: 'Iron Sword', type: 'weapon', rate: 'B', price: 129,
+        dmg: 40, icon: '🗡️', desc: 'Pedang baja standar ksatria Kerajaan Eldoria.'
+      },
+      golden_sword: {
+        id: 'golden_sword', name: 'Golden Sword', type: 'weapon', rate: 'A', price: 16,
+        dmg: 70, icon: '🔱', desc: 'Pedang emas seremonial yang diberkati cahaya suci.'
+      },
+      jelb_sword: {
+        id: 'jelb_sword', name: 'Jelb Sword', type: 'weapon', rate: 'A+', price: 439,
+        dmg: 100, icon: '⚔️', desc: 'Bilahan kristal biru dengan ketajaman luar biasa.'
+      },
+      magma_sword: {
+        id: 'magma_sword', name: 'Magma Sword', type: 'weapon', rate: 'S', price: 760,
+        dmg: 250, dot: { name: 'Terbakar', dmg: 47, turns: 2 }, icon: '🔥',
+        desc: '250 DMG + Terbakar 47 dmg/detik selama 2 detik tiap serangan (dapat ditumpuk).'
+      },
+      double_dagger: {
+        id: 'double_dagger', name: 'Double Dagger', type: 'weapon', rate: 'S+', price: 1370,
+        dmg: 350, dot: { name: 'Racun', dmg: 69, turns: 4 }, icon: '🧪',
+        desc: '350 DMG + Racun 69 dmg/detik selama 4 detik tiap serangan (dapat ditumpuk).'
+      },
+      excalibur_sword: {
+        id: 'excalibur_sword', name: 'Excalibur Sword', type: 'weapon', rate: 'SS', price: 1570,
+        dmg: 500, dot: { name: 'Penyedotan Jiwa', dmg: 120, turns: 6, lifesteal: true }, icon: '✨',
+        desc: '500 DMG + Penyedotan Jiwa 120 dmg/detik selama 6 detik tiap serangan (dapat ditumpuk).'
+      },
+      nano_machine_sword: {
+        id: 'nano_machine_sword', name: 'Nano Machine Sword', type: 'weapon', rate: 'SS+', price: 1780,
+        dmg: 706, dot: { name: 'Corrupted', dmg: 167, turns: 8 }, icon: '⚡',
+        desc: '706 DMG + Corrupted 167 dmg/detik selama 8 detik tiap serangan (dapat ditumpuk).'
+      },
+      black_flame_dragon: {
+        id: 'black_flame_dragon', name: 'Black Flame Dragon', type: 'weapon', rate: 'SSS', price: 2147,
+        dmg: 999, dot: { name: 'Penyucian Jiwa', dmg: 264, turns: 10 }, specialSkill: 'one_slash_kill', maxSkillUses: 5, icon: '🐉',
+        desc: '999 DMG + Penyucian Jiwa 264 dmg/detik selama 10 detik (stack) + Skill Eksklusif: One Slash One Kill (Max 5x).'
+      },
+
+      // ================= ARMORS (10) =================
+      leather_armor: {
+        id: 'leather_armor', name: 'Leather Armor', type: 'armor', rate: 'D', price: 10,
+        bonusHp: 100, shield: 10, icon: '🦺',
+        desc: '+100 Max HP, +10 Shield Point.'
+      },
+      iron_armor_v1: {
+        id: 'iron_armor_v1', name: 'Iron Armor v1', type: 'armor', rate: 'C', price: 25,
+        bonusHp: 178, shield: 20, icon: '🛡️',
+        desc: '+178 Max HP, +20 Shield Point.'
+      },
+      iron_armor_v2: {
+        id: 'iron_armor_v2', name: 'Iron Armor v2', type: 'armor', rate: 'B', price: 134,
+        bonusHp: 234, shield: 30, icon: '🛡️',
+        desc: '+234 Max HP, +30 Shield Point.'
+      },
+      iron_armor_v3: {
+        id: 'iron_armor_v3', name: 'Iron Armor v3', type: 'armor', rate: 'A', price: 897,
+        bonusHp: 275, shield: 40, icon: '🛡️',
+        desc: '+275 Max HP, +40 Shield Point.'
+      },
+      adams_tree_armor: {
+        id: 'adams_tree_armor', name: 'Adams Tree Armor', type: 'armor', rate: 'A+', price: 1245,
+        bonusHp: 359, shield: 50, regen: 1, icon: '🌿',
+        desc: '+359 Max HP, +50 Shield Point, +1 HP per detik.'
+      },
+      meteor_armor: {
+        id: 'meteor_armor', name: 'Meteor Armor', type: 'armor', rate: 'S', price: 1789,
+        bonusHp: 445, shield: 60, reflect: 0.05, icon: '☄️',
+        desc: '+445 Max HP, +60 Shield Point, memantulkan 5% damage ke musuh.'
+      },
+      holly_armor: {
+        id: 'holly_armor', name: 'Holly Armor', type: 'armor', rate: 'S+', price: 2478,
+        bonusHp: 567, shield: 70, regen: 3, icon: '👼',
+        desc: '+567 Max HP, +70 Shield Point, +3 HP per detik.'
+      },
+      kosmik_armor: {
+        id: 'kosmik_armor', name: 'Kosmik Armor', type: 'armor', rate: 'SS', price: 2789,
+        bonusHp: 643, shield: 80, immuneThreshold: 200, immuneCd: 15, icon: '🌌',
+        desc: '+643 Max HP, +80 Shield Point, kebal damage hingga 200 DMG (Cooldown 15 detik).'
+      },
+      pegasus_armor: {
+        id: 'pegasus_armor', name: 'Pegasus Armor', type: 'armor', rate: 'SS+', price: 3609,
+        bonusHp: 699, shield: 90, roomSkips: 5, skipCd: 60, icon: '🪽',
+        desc: '+699 Max HP, +90 Shield Point, skip ruangan manapun 5x (Cooldown 1 menit).'
+      },
+      god_armor: {
+        id: 'god_armor', name: 'God Armor', type: 'armor', rate: 'SSS', price: 4000,
+        bonusHp: 989, shield: 100, oracleVision: true, roomSkips: 3, floorSkips: 2, icon: '👑',
+        desc: '+989 Max HP, +100 Shield Point, melihat % ruangan rekomendasi, skip ruangan 3x, skip lantai berikutnya 2x.'
+      },
+
+      // ================= CONSUMABLES (11 + Potion Variants) =================
+      bandage: {
+        id: 'bandage', name: 'Bandage', type: 'consumable', rate: 'B+', price: 200,
+        heal: 250, icon: '🩹', desc: 'Memulihkan +250 HP secara instan.'
+      },
+      cookies: {
+        id: 'cookies', name: 'Cookies', type: 'consumable', rate: 'D', price: 50,
+        heal: 50, icon: '🍪', desc: 'Kue hangat penambah stamina. Memulihkan +50 HP.'
+      },
+      holy_water: {
+        id: 'holy_water', name: 'Holy Water', type: 'consumable', rate: 'C', price: 100,
+        heal: 100, icon: '💧', desc: 'Air suci katedral. Memulihkan +100 HP.'
+      },
+      star_candle: {
+        id: 'star_candle', name: 'Star Candle', type: 'consumable', rate: 'B+', price: 150,
+        luckBonus: 25, icon: '🕯️', desc: 'Memberikan +25 Luck selama eksplorasi untuk meningkatkan kualitas harta.'
+      },
+      holy_grail: {
+        id: 'holy_grail', name: 'Holy Grail', type: 'consumable', rate: 'A+', price: 300,
+        hotRegen: 2, hotDuration: 120, icon: '🏆', desc: 'Memulihkan +2 HP/detik selama maksimal 2 menit (120 detik).'
+      },
+      spirit_orb: {
+        id: 'spirit_orb', name: 'Spirit Orb', type: 'consumable', rate: 'S+', price: 450,
+        permShield: 200, icon: '🔮', desc: '+200 Shield Point permanen yang dapat memperbaiki diri sendiri setelah hancur (CD 2 menit).'
+      },
+      v_compas: {
+        id: 'v_compas', name: 'V Compas', type: 'consumable', rate: 'S+', price: 200,
+        charges: 5, effect: 'compass', icon: '🧭', desc: 'Menunjukkan pintu teraman (monster lemah/kotak harta) hingga 5 kali penggunaan.'
+      },
+      heavenly_flute: {
+        id: 'heavenly_flute', name: 'Heavenly Flute', type: 'consumable', rate: 'SS', price: 250,
+        charges: 5, effect: 'flute', icon: '🪈', desc: 'Membuat monster tertidur dan skip ruangan tanpa kehilangan HP (hingga 5 kali).'
+      },
+      clone_potion: {
+        id: 'clone_potion', name: 'Clone Potion', type: 'consumable', rate: 'SS+', price: 789,
+        effect: 'clone', icon: '👥', desc: 'Menciptakan klon pengganti player untuk melewati ruangan/monster tanpa kehilangan HP.'
+      },
+      garuda_token: {
+        id: 'garuda_token', name: 'Garuda Token', type: 'consumable', rate: 'SSS+', price: 897,
+        effect: 'revive', icon: '🦅', desc: 'Kesempatan hidup kedua setelah mati (HP & Shield pulih 60%). Maksimal membawa 1 tiap permainan.'
+      },
+      // Potion All Varian (D- hingga SSS+, 100 hingga 5000 gold)
+      potion_heal_d: {
+        id: 'potion_heal_d', name: 'Minor Heal Potion', type: 'consumable', rate: 'D-', price: 100,
+        heal: 150, icon: '🧪', desc: 'Ramuan penyembuh dasar (+150 HP).'
+      },
+      potion_luck_b: {
+        id: 'potion_luck_b', name: 'Fortune Luck Potion', type: 'consumable', rate: 'B', price: 650,
+        luckBonus: 45, icon: '🍀', desc: 'Ramuan keberuntungan (+45 Luck untuk drop harta langka).'
+      },
+      potion_strength_s: {
+        id: 'potion_strength_s', name: 'Titan Strength Potion', type: 'consumable', rate: 'S', price: 1850,
+        atkMult: 1.5, icon: '💪', desc: 'Meningkatkan serangan senjata sebesar +50% selama penjelajahan ini.'
+      },
+      potion_invis_ss: {
+        id: 'potion_invis_ss', name: 'Shadow Invisibility Potion', type: 'consumable', rate: 'SS', price: 3200,
+        invisRooms: 3, icon: '👻', desc: 'Menghilang dari pandangan monster selama 3 ruangan berikutnya (skip aman).'
+      },
+      potion_elixir_sss: {
+        id: 'potion_elixir_sss', name: 'Divine Sovereign Elixir', type: 'consumable', rate: 'SSS+', price: 5000,
+        heal: 1500, luckBonus: 80, atkMult: 1.75, icon: '⚗️', desc: 'Eliksir Agung: Pulih +1500 HP, +80 Luck, dan +75% Attack!'
+      },
+
+      // ================= VALUABLE ITEMS (Loot to sell in Shop) =================
+      val_goblet: {
+        id: 'val_goblet', name: 'Piala Perunggu Kuno', type: 'valuable', rate: 'D', price: 45,
+        icon: '🏺', desc: 'Relik perunggu dari reruntuhan luar Eldoria. Jual di Shop.'
+      },
+      val_ring: {
+        id: 'val_ring', name: 'Cincin Perak Bangsawan', type: 'valuable', rate: 'C', price: 140,
+        icon: '💍', desc: 'Cincin berukir lambang keluarga bangsawan lama.'
+      },
+      val_grimoire: {
+        id: 'val_grimoire', name: 'Grimoire Terlarang', type: 'valuable', rate: 'B', price: 360,
+        icon: '📕', desc: 'Buku sihir kuno berisi mantra abad pertengahan.'
+      },
+      val_chalice: {
+        id: 'val_chalice', name: 'Cawan Ruby Eldoria', type: 'valuable', rate: 'A', price: 850,
+        icon: '🍷', desc: 'Cawan emas bertatahkan batu delima murni.'
+      },
+      val_crown: {
+        id: 'val_crown', name: 'Mahkota Raja Terlupakan', type: 'valuable', rate: 'S', price: 1950,
+        icon: '👑', desc: 'Mahkota kerajaan yang hilang di kedalaman Abyssal.'
+      },
+      val_dragon_heart: {
+        id: 'val_dragon_heart', name: 'Jantung Kristal Naga', type: 'valuable', rate: 'SS', price: 3400,
+        icon: '💎', desc: 'Inti energi naga purba yang memancarkan panas abadi.'
+      },
+      val_abyss_core: {
+        id: 'val_abyss_core', name: 'Relik Bintang Abyssal', type: 'valuable', rate: 'SSS', price: 6500,
+        icon: '🌟', desc: 'Harta karun legendaris Lantai 100 dengan nilai jual fantastis!'
+      }
+    };
+
+    const SKINS_DB = [
+      { id: 'knight', name: 'Ksatria Eldoria', price: 0, color: '#60a5fa', cape: '#dc2626', icon: '🛡️', bonusDesc: 'Zirah seimbang kebanggaan kerajaan.' },
+      { id: 'shadow', name: 'Pemburu Bayangan', price: 600, color: '#a855f7', cape: '#1e1b4b', icon: '🗡️', bonusDesc: 'Jubah malam pembunuh bayaran (+5% Crit).' },
+      { id: 'crimson', name: 'Penyihir Merah', price: 1400, color: '#f43f5e', cape: '#7f1d1d', icon: '🔥', bonusDesc: 'Jubah alkemis api kuno (+10 Luck).' },
+      { id: 'paladin', name: 'Paladin Emas', price: 2800, color: '#fbbf24', cape: '#fef08a', icon: '👑', bonusDesc: 'Zirah suci pelindung cahaya (+50 Max HP).' }
+    ];
+
+    const HUNT_MAPS = [
+      { id: 'catacombs', name: 'Katakombe Eldoria', minFloor: 1, theme: '#292233', accent: '#64748b', desc: 'Lorong batu bawah tanah penuh tengkorak dan goblin.' },
+      { id: 'crimson_citadel', name: 'Benteng Crimson', minFloor: 10, theme: '#331820', accent: '#e11d48', desc: 'Kastil terkutuk yang dijaga ksatria darah & gargoyle.' },
+      { id: 'abyssal_void', name: 'Jurang Abyssal', minFloor: 25, theme: '#17122b', accent: '#9333ea', desc: 'Dimensi kegelapan terdalam menuju Lantai 100.' }
+    ];
+
+    const DIFFICULTIES = [
+      { id: 'easy', name: 'Mudah (Squire)', hpMult: 0.85, dmgMult: 0.8, lootMult: 1.0, badge: 'text-emerald-400' },
+      { id: 'normal', name: 'Normal (Knight)', hpMult: 1.0, dmgMult: 1.0, lootMult: 1.35, badge: 'text-sky-400' },
+      { id: 'hard', name: 'Sulit (Crusader)', hpMult: 1.35, dmgMult: 1.3, lootMult: 1.85, badge: 'text-amber-400' },
+      { id: 'nightmare', name: 'Mimpi Buruk (Abyss)', hpMult: 1.8, dmgMult: 1.65, lootMult: 2.6, badge: 'text-rose-500' }
+    ];
+
+    const CAREER_LEVELS = [
+      { lv: 1, title: 'Ujian Gerbang Bawah Tanah', targetFloor: 3, targetKills: 2, targetHighLoot: 0, rewardGold: 200, rewardItem: 'iron_sword', desc: 'Capai Lantai 3 & kalahkan 2 monster.' },
+      { lv: 2, title: 'Pembersihan Katakombe', targetFloor: 6, targetKills: 5, targetHighLoot: 1, desc: 'Capai Lantai 6, kalahkan 5 monster, & temukan 1 item Rate B+.' , rewardGold: 450, rewardItem: 'iron_armor_v2' },
+      { lv: 3, title: 'Pemburu Relik Kuno', targetFloor: 12, targetKills: 10, targetHighLoot: 2, desc: 'Capai Lantai 12, kalahkan 10 monster, & dapatkan 2 item Rate A+.', rewardGold: 950, rewardItem: 'jelb_sword' },
+      { lv: 4, title: 'Penjaga Api Magma', targetFloor: 25, targetKills: 18, targetHighLoot: 3, desc: 'Capai Lantai 25, kalahkan 18 monster, & dapatkan 3 item Rate S+.', rewardGold: 2200, rewardItem: 'meteor_armor' },
+      { lv: 5, title: 'Penakluk Jurang Abyssal', targetFloor: 50, targetKills: 30, targetHighLoot: 4, desc: 'Capai Lantai 50, kalahkan 30 monster, & dapatkan 4 item Rate SS+.', rewardGold: 5000, rewardItem: 'excalibur_sword' }
+    ];
+
+    const ACHIEVEMENTS_DB = [
+      { id: 'first_blood', name: 'Pedang Pertama', desc: 'Kalahkan monster pertama di dungeon.', check: s => s.stats.totalKills >= 1, rewardGold: 120 },
+      { id: 'survivor_extract', name: 'Selamat dari Kegelapan', desc: 'Berhasil melakukan ekstraksi pertama kali.', check: s => s.stats.extractions >= 1, rewardGold: 200 },
+      { id: 'deep_delver', name: 'Penjelajah Lantai 20', desc: 'Mencapai kedalaman Lantai 20.', check: s => s.stats.maxFloor >= 20, rewardGold: 600 },
+      { id: 'floor_100', name: 'Legenda Lantai 100', desc: 'Mencapai Lantai 100 tempat item SSS bersemayam.', check: s => s.stats.maxFloor >= 100, rewardGold: 5000 },
+      { id: 'rich_lord', name: 'Bangsawan Eldoria', desc: 'Kumpulkan total 3.000 Gold.', check: s => s.gold >= 3000, rewardGold: 800 },
+      { id: 'sss_hunter', name: 'Kolektor Agung SSS', desc: 'Dapatkan item dengan tingkat Rate SSS atau SSS+.', check: s => s.stats.gotSSS === true, rewardGold: 2500 }
+    ];
+
+    const MONSTERS_DB = [
+      { name: 'Tikus Wabah', minF: 1, baseHp: 65, baseDmg: 14, color: '#78716c', eye: '#ef4444', type: 'beast' },
+      { name: 'Goblin Pencuri', minF: 1, baseHp: 95, baseDmg: 22, color: '#4d7c0f', eye: '#facc15', type: 'goblin' },
+      { name: 'Tengkorak Ksatria', minF: 3, baseHp: 155, baseDmg: 34, color: '#e2e8f0', eye: '#38bdf8', type: 'skeleton' },
+      { name: 'Gargoyle Batu', minF: 8, baseHp: 260, baseDmg: 52, color: '#64748b', eye: '#f97316', type: 'gargoyle' },
+      { name: 'Algojo Crimson', minF: 15, baseHp: 440, baseDmg: 78, color: '#be123c', eye: '#fef08a', type: 'knight' },
+      { name: 'Iblis Abyssal', minF: 30, baseHp: 780, baseDmg: 115, color: '#7e22ce', eye: '#f43f5e', type: 'demon' },
+      { name: 'Naga Hitam Purba', minF: 65, baseHp: 1450, baseDmg: 175, color: '#18181b', eye: '#ef4444', type: 'dragon' }
+    ];
+
+    /* ==========================================================================
+       3. PERSISTENT PLAYER PROFILE STATE
+       ========================================================================== */
+    const STORAGE_KEY = 'eldoria_abyssal_save_v1';
+
+    let player = {
+      gold: 250,
+      careerLevel: 1,
+      backpackCap: 20, // Upgradeable up to 100
+      selectedSkin: 'knight',
+      unlockedSkins: ['knight'],
+      equippedWeapon: 'wooden_sword',
+      equippedArmor: 'leather_armor',
+      lobbyInventory: [
+        // Starter pack items ready in lobby or given on fresh run
+        { uid: 'init_1', itemId: 'cookies' },
+        { uid: 'init_2', itemId: 'cookies' },
+        { uid: 'init_3', itemId: 'bandage' }
+      ],
+      claimedAchievements: [],
+      sfxMuted: false,
+      stats: {
+        totalKills: 0,
+        extractions: 0,
+        maxFloor: 1,
+        gotSSS: false
+      }
+    };
+
+    function saveGame() {
+      try {
+        player.sfxMuted = SoundFX.isMuted();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
+      } catch (e) {}
+      updateHeaderUI();
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          player = { ...player, ...parsed, stats: { ...player.stats, ...(parsed.stats || {}) } };
+          SoundFX.setMuted(!!player.sfxMuted);
+        }
+      } catch (e) {}
+      updateHeaderUI();
+    }
+
+    function genUid() {
+      return 'itm_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+    }
+
+    function getItemSlots(itemId) {
+      const it = ITEM_DB[itemId];
+      if (!it) return 1;
+      return RATE_SLOTS[it.rate] || 1;
+    }
+
+    function calcUsedSlots(list) {
+      return list.reduce((sum, entry) => sum + getItemSlots(entry.itemId), 0);
+    }
+
+    function isRateAtLeast(rate, minRate) {
+      return RATE_ORDER.indexOf(rate) >= RATE_ORDER.indexOf(minRate);
+    }
+
+    /* ==========================================================================
+       4. UI HELPERS: HEADER, TOASTS, MODALS
+       ========================================================================== */
+    function updateHeaderUI() {
+      document.getElementById('hdr-gold').textContent = player.gold.toLocaleString('id-ID');
+      document.getElementById('hdr-career-lv').textContent = player.careerLevel;
+      const skin = SKINS_DB.find(s => s.id === player.selectedSkin) || SKINS_DB[0];
+      document.getElementById('hdr-skin-name').textContent = skin.name;
+      document.getElementById('header-avatar').textContent = skin.icon;
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const colors = {
+        info: 'bg-[#221a30] border-purple-400 text-purple-100',
+        success: 'bg-[#123322] border-emerald-400 text-emerald-100',
+        warn: 'bg-[#3b2810] border-amber-400 text-amber-100',
+        danger: 'bg-[#3d121a] border-rose-500 text-rose-100'
+      };
+      el.className = `px-3 py-2 rounded border-l-4 shadow-lg text-sm font-bold transition-all duration-300 ${colors[type] || colors.info}`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-8px)';
+        setTimeout(() => el.remove(), 300);
+      }, 2400);
+    }
+
+    function openModal(title, bodyHtml, footerHtml = '') {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').innerHTML = bodyHtml;
+      document.getElementById('modal-footer').innerHTML = footerHtml || `<button onclick="closeModal()" class="btn-pixel px-4 py-1.5 rounded text-sm">Tutup</button>`;
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.remove('hidden');
+      ov.classList.add('flex');
+    }
+
+    function closeModal() {
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.add('hidden');
+      ov.classList.remove('flex');
+    }
+
+    function openLoreModal() {
+      SoundFX.click();
+      openModal(
+        '📜 Tambo Kerajaan Eldoria & Panduan',
+        `
+        <div class="space-y-2.5 text-gray-200 leading-relaxed">
+          <p class="text-amber-300 font-medieval font-bold">Kisah Dunia Eldoria:</p>
+          <p>Pada abad ke-14 Era Besi, retakan raksasa bernama <span class="text-purple-300">Jurang Abyssal</span> terbuka di bawah kastil Kerajaan Eldoria. Harta karun kuno dan artefak naga tersembunyi hingga Lantai 100, namun monster kegelapan menjaga setiap pintu.</p>
+          <div class="p-2.5 rounded bg-[#120e18] border border-purple-900/60 space-y-1 text-sm">
+            <div class="text-amber-300 font-bold">Aturan Penjelajahan & Ekstraksi:</div>
+            <div>• <b>Timer 15 Detik:</b> Jika diam 15 detik di ruangan, pintu acak dipilih paksa! Saat bertarung, diam 15 detik membuat monster menyerang dengan <b>+30% s/d +45% bonus damage</b>.</div>
+            <div>• <b>Backpack vs Brangkas:</b> Item di Backpack hilang jika mati. Simpan item berharga di <b>Brangkas (25 kotak)</b> agar tetap aman meski gugur!</div>
+            <div>• <b>Lantai 100:</b> Monster di lantai 100 memiliki peluang <b>60% drop item Rate SSS</b>!</div>
+          </div>
+        </div>
+        `
+      );
+    }
+
+    /* ==========================================================================
+       5. LOBBY SCREEN & NAVIGATION
+       ========================================================================== */
+    let currentScreen = 'lobby'; // lobby | play_select | shop | inventory | achievements | dungeon
+
+    function navigate(screen) {
+      SoundFX.click();
+      stopAllRunTimers();
+      currentScreen = screen;
+      renderScreen();
+    }
+
+    function renderScreen() {
+      const main = document.getElementById('main-container');
+      if (currentScreen === 'lobby') renderLobby(main);
+      else if (currentScreen === 'play_select') renderPlaySelect(main);
+      else if (currentScreen === 'shop') renderShop(main);
+      else if (currentScreen === 'inventory') renderLobbyInventory(main);
+      else if (currentScreen === 'achievements') renderAchievements(main);
+      else if (currentScreen === 'dungeon') renderDungeonView(main);
+    }
+
+    function renderLobby(container) {
+      const wep = player.equippedWeapon ? ITEM_DB[player.equippedWeapon] : null;
+      const arm = player.equippedArmor ? ITEM_DB[player.equippedArmor] : null;
+      const skin = SKINS_DB.find(s => s.id === player.selectedSkin) || SKINS_DB[0];
+
+      const maxHp = 1000 + (arm ? arm.bonusHp : 0) + (skin.id === 'paladin' ? 50 : 0);
+      const maxShield = (arm ? arm.shield : 0);
+
+      container.innerHTML = `
+        <div class="p-3.5 space-y-3.5">
+          <!-- HERO SHOWCASE CARD -->
+          <div class="relative rounded-xl border-2 border-[#433359] bg-gradient-to-b from-[#21192e] to-[#120e1a] p-3.5 overflow-hidden shadow-lg">
+            <div class="flex items-center gap-3.5">
+              <div class="w-20 h-20 rounded-lg border-2 border-amber-500/50 bg-[#0e0b14] overflow-hidden shrink-0">
+                <canvas id="lobby-hero-canvas" width="80" height="80"></canvas>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="font-medieval font-bold text-amber-300 text-lg truncate">${skin.name}</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-purple-950 border border-purple-600 text-purple-200">Bag: ${player.backpackCap} Slot</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-2">${skin.bonusDesc}</p>
+                <div class="grid grid-cols-2 gap-1.5 text-sm">
+                  <div class="bg-[#120e18] px-2 py-1 rounded border border-emerald-900/60 flex items-center justify-between">
+                    <span class="text-gray-400">❤️ HP</span>
+                    <span class="text-emerald-400 font-bold">${maxHp}</span>
+                  </div>
+                  <div class="bg-[#120e18] px-2 py-1 rounded border border-sky-900/60 flex items-center justify-between">
+                    <span class="text-gray-400">🛡️ Shield</span>
+                    <span class="text-sky-400 font-bold">${maxShield}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- EQUIPPED GEAR STRIP -->
+            <div class="mt-3 pt-2.5 border-t border-[#322545] grid grid-cols-2 gap-2 text-sm">
+              <div class="bg-[#130f1a] p-2 rounded border border-[#322545] flex items-center gap-2">
+                <span class="text-xl">${wep ? wep.icon : '✊'}</span>
+                <div class="min-w-0">
+                  <div class="text-[11px] text-gray-400">Senjata Utama</div>
+                  <div class="font-bold text-amber-200 truncate">${wep ? wep.name : 'Tangan Kosong'}</div>
+                </div>
+              </div>
+              <div class="bg-[#130f1a] p-2 rounded border border-[#322545] flex items-center gap-2">
+                <span class="text-xl">${arm ? arm.icon : '👕'}</span>
+                <div class="min-w-0">
+                  <div class="text-[11px] text-gray-400">Armor Pelindung</div>
+                  <div class="font-bold text-sky-200 truncate">${arm ? arm.name : 'Tanpa Armor'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LORE BANNER -->
+          <div class="px-3 py-2 rounded-lg bg-[#191324] border border-[#37294a] text-sm text-purple-200 flex items-center justify-between">
+            <span>🏰 Gerbang Jurang Abyssal menanti keberanianmu...</span>
+            <span class="text-xs text-amber-400 font-bold">Rekor: Lt.${player.stats.maxFloor}</span>
+          </div>
+
+          <!-- 4 MAIN MENU BUTTONS -->
+          <div class="grid grid-cols-1 gap-2.5 pt-1">
+            <button onclick="navigate('play_select')" class="btn-pixel btn-gold p-3.5 rounded-xl flex items-center justify-between glow-gold">
+              <div class="flex items-center gap-3 text-left">
+                <span class="text-3xl">⚔️</span>
+                <div>
+                  <div class="font-medieval font-bold text-lg text-amber-200">PLAY — MASUK DUNGEON</div>
+                  <div class="text-xs text-amber-100/80">Pilih Mode Karir atau Mode Perburuan</div>
+                </div>
+              </div>
+              <span class="text-xl">▶</span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <button onclick="navigate('shop')" class="btn-pixel p-3.5 rounded-xl flex flex-col items-center justify-center gap-1 text-center">
+                <span class="text-2xl">🏪</span>
+                <span class="font-medieval font-bold text-amber-300">SHOP</span>
+                <span class="text-xs text-gray-400">Senjata, Armor & Tas</span>
+              </button>
+
+              <button onclick="navigate('inventory')" class="btn-pixel p-3.5 rounded-xl flex flex-col items-center justify-center gap-1 text-center">
+                <span class="text-2xl">🎒</span>
+                <span class="font-medieval font-bold text-sky-300">INVENTORI</span>
+                <span class="text-xs text-gray-400">Item & Skin (${player.lobbyInventory.length})</span>
+              </button>
+            </div>
+
+            <button onclick="navigate('achievements')" class="btn-pixel p-3 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🏆</span>
+                <div class="text-left">
+                  <div class="font-medieval font-bold text-emerald-300">ACHIEVEMENT</div>
+                  <div class="text-xs text-gray-400">Klaim hadiah pencapaian (${player.claimedAchievements.length}/${ACHIEVEMENTS_DB.length})</div>
+                </div>
+              </div>
+              <span class="text-sm text-emerald-400 font-bold">Lihat &rarr;</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => drawHeroPreview('lobby-hero-canvas'), 20);
+    }
+
+    /* ==========================================================================
+       6. PLAY SELECTION (MODE KARIR vs MODE PERBURUAN)
+       ========================================================================== */
+    let selectedHuntMap = 'catacombs';
+    let selectedHuntDiff = 'normal';
+
+    function renderPlaySelect(container) {
+      const careerStage = CAREER_LEVELS.find(c => c.lv === player.careerLevel) || CAREER_LEVELS[CAREER_LEVELS.length - 1];
+
+      container.innerHTML = `
+        <div class="p-3.5 space-y-3.5">
+          <div class="flex items-center justify-between">
+            <button onclick="navigate('lobby')" class="btn-pixel px-3 py-1.5 rounded text-sm">&larr; Lobby</button>
+            <h2 class="font-medieval font-bold text-amber-300 text-lg">PILIH MODE EKSPEDISI</h2>
+            <div class="w-12"></div>
+          </div>
+
+          <!-- STARTER PACK INFO -->
+          <div class="p-2.5 rounded-lg bg-[#141a24] border border-sky-800/60 text-xs text-sky-200">
+            🎒 <b>Perlengkapan Awal:</b> Anda akan membawa senjata & armor terpasang. Jika inventori kosong, <b>Starter Pack</b> (1x Wooden Sword, 1x Leather Armor, 2x Cookies, 1x Bandage) otomatis dibekali!
+          </div>
+
+          <!-- MODE 1: KARIR -->
+          <div class="rounded-xl border-2 border-amber-600/70 bg-[#1c1526] p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-medieval font-bold text-amber-300 text-lg">👑 MODE KARIR (Level ${player.careerLevel})</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-amber-950 border border-amber-500 text-amber-200">Wajib Selesai Misi</span>
+            </div>
+            <div class="p-2.5 rounded bg-[#120e18] border border-amber-900/50 space-y-1">
+              <div class="font-bold text-amber-200">${careerStage.title}</div>
+              <div class="text-sm text-gray-300">🎯 <b>Misi:</b> ${careerStage.desc}</div>
+              <div class="text-xs text-emerald-400">🎁 Imbalan: +${careerStage.rewardGold} Gold & ${ITEM_DB[careerStage.rewardItem].name}</div>
+            </div>
+            <p class="text-xs text-rose-300">⚠️ Tombol Ekstraksi terkunci hingga misi level tercapai. Kesulitan diatur otomatis oleh sistem.</p>
+            <button onclick="startDungeonRun('career')" class="btn-pixel btn-gold w-full py-2.5 rounded-lg font-medieval font-bold text-base">
+              MULAI MISI KARIR LV.${player.careerLevel}
+            </button>
+          </div>
+
+          <!-- MODE 2: PERBURUAN -->
+          <div class="rounded-xl border-2 border-purple-600/70 bg-[#1c1526] p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-medieval font-bold text-purple-300 text-lg">🧭 MODE PERBURUAN</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500 text-emerald-200">Ekstraksi Bebas</span>
+            </div>
+            <p class="text-xs text-gray-300">Jelajahi dungeon tanpa batas hingga Lantai 100+. Semakin tinggi kesulitan, semakin besar peluang harta langka!</p>
+
+            <!-- MAP SELECT -->
+            <div>
+              <label class="text-xs text-purple-300 font-bold block mb-1">Pilih Wilayah Map:</label>
+              <div class="grid grid-cols-1 gap-1.5">
+                ${HUNT_MAPS.map(m => `
+                  <button onclick="selectedHuntMap='${m.id}'; renderScreen();"
+                    class="p-2 rounded border text-left transition ${selectedHuntMap === m.id ? 'border-amber-400 bg-[#2b203b]' : 'border-[#382b4d] bg-[#130f1a]'}">
+                    <div class="flex justify-between items-center">
+                      <span class="font-bold text-amber-200 text-sm">${m.name}</span>
+                      <span class="text-[11px] text-gray-400">Mulai Lt.${m.minFloor}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">${m.desc}</div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- DIFFICULTY SELECT -->
+            <div>
+              <label class="text-xs text-purple-300 font-bold block mb-1">Tingkat Kesulitan (Pengali Rate Harta):</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                ${DIFFICULTIES.map(d => `
+                  <button onclick="selectedHuntDiff='${d.id}'; renderScreen();"
+                    class="p-2 rounded border text-left ${selectedHuntDiff === d.id ? 'border-amber-400 bg-[#2b203b]' : 'border-[#382b4d] bg-[#130f1a]'}">
+                    <div class="font-bold text-sm ${d.badge}">${d.name}</div>
+                    <div class="text-[11px] text-gray-300">Loot Rate: <b>${d.lootMult}x</b></div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <button onclick="startDungeonRun('hunt')" class="btn-pixel btn-emerald w-full py-2.5 rounded-lg font-medieval font-bold text-base">
+              MULAI PERBURUAN
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       7. SHOP SCREEN (Weapons, Armors, Consumables, Backpack, Skins, Sell)
+       ========================================================================== */
+    let shopTab = 'weapon'; // weapon | armor | consumable | upgrade | sell
+
+    function renderShop(container) {
+      const tabs = [
+        { id: 'weapon', label: '⚔️ Senjata' },
+        { id: 'armor', label: '🛡️ Armor' },
+        { id: 'consumable', label: '🧪 Item' },
+        { id: 'upgrade', label: '🎒 Tas & Skin' },
+        { id: 'sell', label: '💰 Jual' }
+      ];
+
+      let contentHtml = '';
+
+      if (shopTab === 'weapon' || shopTab === 'armor' || shopTab === 'consumable') {
+        const items = Object.values(ITEM_DB).filter(i => i.type === shopTab);
+        contentHtml = items.map(it => `
+          <div class="p-2.5 rounded-lg bg-[#16121f] border border-[#36294a] flex items-center justify-between gap-2.5">
+            <div class="flex items-start gap-2.5 min-w-0">
+              <div class="w-10 h-10 rounded bg-[#0e0b14] border border-[#3e3054] flex items-center justify-center text-2xl shrink-0">
+                ${it.icon}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-bold text-amber-100">${it.name}</span>
+                  <span class="text-[11px] px-1.5 rounded border rate-${it.rate}">${it.rate}</span>
+                  <span class="text-[11px] text-gray-400">[${getItemSlots(it.id)} kotak]</span>
+                </div>
+                <p class="text-xs text-gray-300 leading-snug mt-0.5">${it.desc}</p>
+              </div>
+            </div>
+            <button onclick="buyShopItem('${it.id}')" class="btn-pixel btn-gold px-3 py-2 rounded-lg text-sm font-bold shrink-0">
+              🪙 ${it.price}
+            </button>
+          </div>
+        `).join('');
+      } else if (shopTab === 'upgrade') {
+        const nextCap = player.backpackCap + 10;
+        const bagCost = player.backpackCap * 25;
+        contentHtml = `
+          <div class="p-3 rounded-lg bg-[#1b1526] border border-amber-500/50 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-medieval font-bold text-amber-300">🎒 Upgrade Kapasitas Backpack</span>
+              <span class="text-xs bg-amber-950 px-2 py-0.5 rounded text-amber-200">${player.backpackCap} / 100 Kotak</span>
+            </div>
+            <p class="text-xs text-gray-300">Memperbesar kapasitas tas saat menjelajah dungeon agar dapat membawa lebih banyak harta Rate tinggi.</p>
+            ${player.backpackCap < 100
+              ? `<button onclick="upgradeBackpack()" class="btn-pixel btn-gold w-full py-2 rounded font-bold text-sm">Upgrade ke ${nextCap} Kotak (🪙 ${bagCost})</button>`
+              : `<div class="text-center text-emerald-400 font-bold text-sm">Kapasitas Backpack Sudah Maksimal!</div>`
+            }
+          </div>
+
+          <div class="font-medieval font-bold text-purple-300 pt-2">🎭 Koleksi Karakter & Skin</div>
+          ${SKINS_DB.map(sk => {
+            const owned = player.unlockedSkins.includes(sk.id);
+            const active = player.selectedSkin === sk.id;
+            return `
+              <div class="p-2.5 rounded-lg bg-[#16121f] border ${active ? 'border-amber-400' : 'border-[#36294a]'} flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">${sk.icon}</span>
+                  <div>
+                    <div class="font-bold text-amber-100">${sk.name}</div>
+                    <div class="text-xs text-gray-400">${sk.bonusDesc}</div>
+                  </div>
+                </div>
+                ${owned
+                  ? `<button onclick="selectSkin('${sk.id}')" class="btn-pixel ${active ? 'btn-emerald' : ''} px-3 py-1.5 rounded text-xs font-bold">${active ? 'Dipakai' : 'Gunakan'}</button>`
+                  : `<button onclick="buySkin('${sk.id}')" class="btn-pixel btn-gold px-3 py-1.5 rounded text-xs font-bold">🪙 ${sk.price}</button>`
+                }
+              </div>
+            `;
+          }).join('')}
+        `;
+      } else if (shopTab === 'sell') {
+        if (player.lobbyInventory.length === 0) {
+          contentHtml = `<div class="text-center py-8 text-gray-400">Inventori Lobby kosong. Jelajahi dungeon untuk mencari harta!</div>`;
+        } else {
+          contentHtml = player.lobbyInventory.map(entry => {
+            const it = ITEM_DB[entry.itemId];
+            if (!it) return '';
+            const sellVal = Math.max(5, Math.floor(it.type === 'valuable' ? it.price : it.price * 0.65));
+            return `
+              <div class="p-2.5 rounded-lg bg-[#16121f] border border-[#36294a] flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="text-2xl">${it.icon}</span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-amber-100 truncate">${it.name} <span class="text-[11px] px-1 rounded border rate-${it.rate}">${it.rate}</span></div>
+                    <div class="text-xs text-gray-400 truncate">${it.desc}</div>
+                  </div>
+                </div>
+                <button onclick="sellLobbyItem('${entry.uid}')" class="btn-pixel btn-emerald px-3 py-1.5 rounded text-xs font-bold shrink-0">
+                  Jual +${sellVal}🪙
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      container.innerHTML = `
+        <div class="p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <button onclick="navigate('lobby')" class="btn-pixel px-3 py-1.5 rounded text-sm">&larr; Lobby</button>
+            <h2 class="font-medieval font-bold text-amber-300 text-lg">TOKO KERAJAAN</h2>
+            <div class="w-12"></div>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1">
+            ${tabs.map(t => `
+              <button onclick="shopTab='${t.id}'; renderScreen();"
+                class="py-2 px-1 rounded text-xs font-bold border ${shopTab === t.id ? 'bg-amber-900/60 border-amber-400 text-amber-200' : 'bg-[#171221] border-[#322645] text-gray-400'}">
+                ${t.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="space-y-2">
+            ${contentHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function buyShopItem(itemId) {
+      const it = ITEM_DB[itemId];
+      if (!it) return;
+      if (player.gold < it.price) {
+        SoundFX.hit(false);
+        showToast('Gold tidak mencukupi!', 'danger');
+        return;
+      }
+      player.gold -= it.price;
+      player.lobbyInventory.push({ uid: genUid(), itemId });
+      SoundFX.coin();
+      showToast(`Membeli ${it.name}!`, 'success');
+      saveGame();
+      renderScreen();
+    }
+
+    function upgradeBackpack() {
+      const cost = player.backpackCap * 25;
+      if (player.gold < cost) {
+        SoundFX.hit(false);
+        showToast('Gold tidak cukup untuk upgrade tas!', 'danger');
+        return;
+      }
+      player.gold -= cost;
+      player.backpackCap = Math.min(100, player.backpackCap + 10);
+      SoundFX.coin();
+      showToast(`Kapasitas Backpack menjadi ${player.backpackCap} kotak!`, 'success');
+      saveGame();
+      renderScreen();
+    }
+
+    function buySkin(skinId) {
+      const sk = SKINS_DB.find(s => s.id === skinId);
+      if (!sk || player.gold < sk.price) {
+        SoundFX.hit(false);
+        showToast('Gold tidak mencukupi!', 'danger');
+        return;
+      }
+      player.gold -= sk.price;
+      player.unlockedSkins.push(skinId);
+      player.selectedSkin = skinId;
+      SoundFX.coin();
+      showToast(`Karakter ${sk.name} terbuka & digunakan!`, 'success');
+      saveGame();
+      renderScreen();
+    }
+
+    function selectSkin(skinId) {
+      player.selectedSkin = skinId;
+      SoundFX.click();
+      saveGame();
+      renderScreen();
+    }
+
+    function sellLobbyItem(uid) {
+      const idx = player.lobbyInventory.findIndex(e => e.uid === uid);
+      if (idx === -1) return;
+      const it = ITEM_DB[player.lobbyInventory[idx].itemId];
+      const sellVal = Math.max(5, Math.floor(it.type === 'valuable' ? it.price : it.price * 0.65));
+      player.lobbyInventory.splice(idx, 1);
+      player.gold += sellVal;
+      SoundFX.coin();
+      showToast(`Menjual ${it.name} (+${sellVal} Gold)`, 'success');
+      saveGame();
+      renderScreen();
+    }
+
+    /* ==========================================================================
+       8. LOBBY INVENTORY & LOADOUT MANAGEMENT
+       ========================================================================== */
+    let invSortBy = 'rate'; // rate | type
+
+    function renderLobbyInventory(container) {
+      const wep = player.equippedWeapon ? ITEM_DB[player.equippedWeapon] : null;
+      const arm = player.equippedArmor ? ITEM_DB[player.equippedArmor] : null;
+
+      const sorted = [...player.lobbyInventory].sort((a, b) => {
+        const ia = ITEM_DB[a.itemId], ib = ITEM_DB[b.itemId];
+        if (!ia || !ib) return 0;
+        if (invSortBy === 'rate') {
+          return RATE_ORDER.indexOf(ib.rate) - RATE_ORDER.indexOf(ia.rate);
+        }
+        return ia.type.localeCompare(ib.type);
+      });
+
+      container.innerHTML = `
+        <div class="p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <button onclick="navigate('lobby')" class="btn-pixel px-3 py-1.5 rounded text-sm">&larr; Lobby</button>
+            <h2 class="font-medieval font-bold text-sky-300 text-lg">INVENTORI LOBBY</h2>
+            <button onclick="invSortBy = invSortBy==='rate'?'type':'rate'; renderScreen();" class="btn-pixel px-2.5 py-1 rounded text-xs">
+              Urut: ${invSortBy === 'rate' ? 'Rate' : 'Tipe'}
+            </button>
+          </div>
+
+          <!-- ACTIVE EQUIPMENT -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-lg bg-[#191424] border border-amber-500/50">
+              <div class="text-xs text-gray-400">Senjata Terpasang</div>
+              <div class="font-bold text-amber-200 truncate">${wep ? wep.icon + ' ' + wep.name : 'Kosong'}</div>
+              ${wep ? `<button onclick="unequipGear('weapon')" class="mt-1 text-xs text-rose-400 underline">Lepas</button>` : ''}
+            </div>
+            <div class="p-2.5 rounded-lg bg-[#191424] border border-sky-500/50">
+              <div class="text-xs text-gray-400">Armor Terpasang</div>
+              <div class="font-bold text-sky-200 truncate">${arm ? arm.icon + ' ' + arm.name : 'Kosong'}</div>
+              ${arm ? `<button onclick="unequipGear('armor')" class="mt-1 text-xs text-rose-400 underline">Lepas</button>` : ''}
+            </div>
+          </div>
+
+          <div class="text-xs text-gray-400">
+            Catatan: Item <b>Consumable</b> di Inventori Lobby akan otomatis dibawa masuk ke Backpack (hingga batas ${player.backpackCap} kotak) saat memulai ekspedisi!
+          </div>
+
+          <div class="space-y-2">
+            ${sorted.length === 0 ? `<div class="text-center py-8 text-gray-500">Belum ada item tersimpan di Lobby.</div>` : sorted.map(entry => {
+              const it = ITEM_DB[entry.itemId];
+              if (!it) return '';
+              const isEquip = it.type === 'weapon' || it.type === 'armor';
+              return `
+                <div class="p-2.5 rounded-lg bg-[#16121f] border border-[#36294a] flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-2xl">${it.icon}</span>
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-amber-100 truncate">${it.name}</span>
+                        <span class="text-[11px] px-1 rounded border rate-${it.rate}">${it.rate}</span>
+                        <span class="text-[11px] text-gray-400">${getItemSlots(it.id)}ktk</span>
+                      </div>
+                      <div class="text-xs text-gray-400 truncate">${it.desc}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    ${isEquip ? `<button onclick="equipFromLobby('${entry.uid}')" class="btn-pixel btn-cyan px-2.5 py-1.5 rounded text-xs font-bold">Pasang</button>` : ''}
+                    <button onclick="sellLobbyItem('${entry.uid}')" class="btn-pixel px-2 py-1.5 rounded text-xs text-amber-300">Jual</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function equipFromLobby(uid) {
+      const idx = player.lobbyInventory.findIndex(e => e.uid === uid);
+      if (idx === -1) return;
+      const it = ITEM_DB[player.lobbyInventory[idx].itemId];
+      if (it.type === 'weapon') {
+        if (player.equippedWeapon) player.lobbyInventory.push({ uid: genUid(), itemId: player.equippedWeapon });
+        player.equippedWeapon = it.id;
+      } else if (it.type === 'armor') {
+        if (player.equippedArmor) player.lobbyInventory.push({ uid: genUid(), itemId: player.equippedArmor });
+        player.equippedArmor = it.id;
+      }
+      player.lobbyInventory.splice(idx, 1);
+      SoundFX.click();
+      showToast(`Memasang ${it.name}`, 'info');
+      saveGame();
+      renderScreen();
+    }
+
+    function unequipGear(slot) {
+      if (slot === 'weapon' && player.equippedWeapon) {
+        player.lobbyInventory.push({ uid: genUid(), itemId: player.equippedWeapon });
+        player.equippedWeapon = null;
+      } else if (slot === 'armor' && player.equippedArmor) {
+        player.lobbyInventory.push({ uid: genUid(), itemId: player.equippedArmor });
+        player.equippedArmor = null;
+      }
+      SoundFX.click();
+      saveGame();
+      renderScreen();
+    }
+
+    /* ==========================================================================
+       9. ACHIEVEMENTS SCREEN
+       ========================================================================== */
+    function renderAchievements(container) {
+      container.innerHTML = `
+        <div class="p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <button onclick="navigate('lobby')" class="btn-pixel px-3 py-1.5 rounded text-sm">&larr; Lobby</button>
+            <h2 class="font-medieval font-bold text-emerald-300 text-lg">ACHIEVEMENT</h2>
+            <div class="w-12"></div>
+          </div>
+
+          <div class="space-y-2.5">
+            ${ACHIEVEMENTS_DB.map(ach => {
+              const unlocked = ach.check(player);
+              const claimed = player.claimedAchievements.includes(ach.id);
+              return `
+                <div class="p-3 rounded-lg bg-[#16121f] border ${claimed ? 'border-emerald-700/60 opacity-75' : unlocked ? 'border-amber-400' : 'border-[#332745]'} flex items-center justify-between gap-2">
+                  <div>
+                    <div class="font-bold text-amber-200">${ach.name}</div>
+                    <div class="text-xs text-gray-300">${ach.desc}</div>
+                    <div class="text-xs text-amber-400 mt-1">Hadiah: +${ach.rewardGold} Gold</div>
+                  </div>
+                  ${claimed
+                    ? `<span class="text-xs text-emerald-400 font-bold px-2 py-1">✓ Diklaim</span>`
+                    : unlocked
+                      ? `<button onclick="claimAchievement('${ach.id}')" class="btn-pixel btn-gold px-3 py-2 rounded text-xs font-bold">Klaim</button>`
+                      : `<span class="text-xs text-gray-500 px-2">Terkunci</span>`
+                  }
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function claimAchievement(id) {
+      const ach = ACHIEVEMENTS_DB.find(a => a.id === id);
+      if (!ach || player.claimedAchievements.includes(id) || !ach.check(player)) return;
+      player.claimedAchievements.push(id);
+      player.gold += ach.rewardGold;
+      SoundFX.coin();
+      showToast(`Achievement "${ach.name}" diklaim! +${ach.rewardGold} Gold`, 'success');
+      saveGame();
+      renderScreen();
+    }
+
+    /* ==========================================================================
+       10. ACTIVE DUNGEON RUN ENGINE (Exploration, 15s Timers, Turn-Based Combat, Extraction)
+       ========================================================================== */
+    let run = null;
+    let timerInterval = null;
+    let animFrameId = null;
+
+    function stopAllRunTimers() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+    }
+
+    function startDungeonRun(mode) {
+      SoundFX.door();
+      const mapObj = HUNT_MAPS.find(m => m.id === selectedHuntMap) || HUNT_MAPS[0];
+      const diffObj = DIFFICULTIES.find(d => d.id === selectedHuntDiff) || DIFFICULTIES[1];
+      const careerObj = CAREER_LEVELS.find(c => c.lv === player.careerLevel) || CAREER_LEVELS[CAREER_LEVELS.length - 1];
+
+      // Determine starting equipment & starter pack
+      let weaponId = player.equippedWeapon;
+      let armorId = player.equippedArmor;
+      const backpack = [];
+
+      // Check if player has zero gear and empty lobby consumables -> grant Starter Pack!
+      const lobbyConsumables = player.lobbyInventory.filter(e => ITEM_DB[e.itemId]?.type === 'consumable');
+      if (!weaponId && !armorId && lobbyConsumables.length === 0) {
+        weaponId = 'wooden_sword';
+        armorId = 'leather_armor';
+        backpack.push({ uid: genUid(), itemId: 'cookies' });
+        backpack.push({ uid: genUid(), itemId: 'cookies' });
+        backpack.push({ uid: genUid(), itemId: 'bandage' });
+        showToast('Starter Pack diberikan: Wooden Sword, Leather Armor, 2x Cookies, 1x Bandage!', 'info');
+      } else {
+        if (!weaponId) weaponId = 'wooden_sword';
+        if (!armorId) armorId = 'leather_armor';
+        // Pack consumables from lobby into backpack up to capacity
+        let garudaCount = 0;
+        const remainingLobby = [];
+        for (const entry of player.lobbyInventory) {
+          const it = ITEM_DB[entry.itemId];
+          if (it && it.type === 'consumable') {
+            if (it.id === 'garuda_token' && garudaCount >= 1) {
+              remainingLobby.push(entry);
+              continue;
+            }
+            const cost = getItemSlots(it.id);
+            if (calcUsedSlots(backpack) + cost <= player.backpackCap) {
+              backpack.push({ ...entry, chargesLeft: it.charges || null });
+              if (it.id === 'garuda_token') garudaCount++;
+            } else {
+              remainingLobby.push(entry);
+            }
+          } else {
+            remainingLobby.push(entry);
+          }
+        }
+        player.lobbyInventory = remainingLobby;
+        saveGame();
+      }
+
+      const arm = ITEM_DB[armorId];
+      const wep = ITEM_DB[weaponId];
+      const skin = SKINS_DB.find(s => s.id === player.selectedSkin) || SKINS_DB[0];
+
+      const maxHp = 1000 + (arm ? arm.bonusHp : 0) + (skin.id === 'paladin' ? 50 : 0);
+      const maxShield = (arm ? arm.shield : 0);
+
+      // Career scaling
+      const autoScale = 1 + (player.careerLevel - 1) * 0.25;
+
+      run = {
+        mode,
+        map: mode === 'hunt' ? mapObj : HUNT_MAPS[0],
+        difficulty: mode === 'hunt' ? diffObj : { id: 'career', name: `Karir Lv.${player.careerLevel}`, hpMult: autoScale, dmgMult: autoScale, lootMult: 1 + player.careerLevel * 0.2 },
+        careerTarget: mode === 'career' ? careerObj : null,
+        floor: mode === 'hunt' ? mapObj.minFloor : 1,
+        roomNum: 1,
+        // Stats
+        hp: maxHp,
+        maxHp,
+        shield: maxShield,
+        maxShield,
+        permSpiritShield: 0,
+        maxPermSpiritShield: 0,
+        spiritOrbCd: 0,
+        // Gear
+        weaponId,
+        armorId,
+        skillUsesLeft: wep && wep.maxSkillUses ? wep.maxSkillUses : 0,
+        armorSkipsLeft: arm && arm.roomSkips ? arm.roomSkips : 0,
+        armorSkipCd: 0,
+        floorSkipsLeft: arm && arm.floorSkips ? arm.floorSkips : 0,
+        kosmikImmuneCd: 0,
+        // Buffs
+        luck: skin.id === 'crimson' ? 10 : 0,
+        atkMult: 1.0,
+        hotRegen: 0,
+        hotTimer: 0,
+        invisRooms: 0,
+        compassActive: false,
+        // Inventories
+        backpack,
+        safeBox: [], // Max 25 slots, preserved on death!
+        // Progress
+        kills: 0,
+        highLootFound: 0,
+        // Room State
+        doors: [],
+        hasStairs: false,
+        roomEvent: 'start', // start | treasure | empty | combat | extracting
+        roomTreasure: null,
+        enemy: null,
+        enemyDots: [],
+        defending: false,
+        combatLog: ['Memasuki Lantai 1 dengan 2 pintu pilihan & Starter Pack.'],
+        // 15-second idle/turn countdown
+        timerSec: 15.0,
+        extractProgress: 0
+      };
+
+      // Initial room: exact 2 doors as specified in prompt!
+      generateRoomDoors(2, false);
+      currentScreen = 'dungeon';
+      renderScreen();
+      startRunTimers();
+    }
+
+    function generateRoomDoors(forcedCount = null, allowStairs = true) {
+      const count = forcedCount || (Math.floor(Math.random() * 5) + 1); // 1 to 5 doors
+      const doors = [];
+      for (let i = 0; i < count; i++) {
+        // Pre-roll hidden outcome for V Compas & God Armor vision
+        const roll = Math.random();
+        const monsterChance = Math.min(0.82, 0.45 + run.floor * 0.004);
+        let hintType = 'treasure';
+        if (roll < monsterChance * 0.55) hintType = 'strong_monster';
+        else if (roll < monsterChance) hintType = 'weak_monster';
+        else hintType = 'treasure';
+
+        const safetyPct = hintType === 'treasure' ? (75 + Math.floor(Math.random() * 21))
+                        : hintType === 'weak_monster' ? (50 + Math.floor(Math.random() * 20))
+                        : (15 + Math.floor(Math.random() * 25));
+
+        doors.push({ index: i + 1, hintType, safetyPct });
+      }
+      run.doors = doors;
+      run.hasStairs = allowStairs && (run.roomNum >= 2 && Math.random() < 0.65);
+      run.timerSec = 15.0;
+    }
+
+    function startRunTimers() {
+      stopAllRunTimers();
+      let warnSubTick = 0;
+      timerInterval = setInterval(() => {
+        if (!run || currentScreen !== 'dungeon') return;
+        if (run.roomEvent === 'extracting') return;
+
+        // Passive regens (every 1s tick via 0.2s step)
+        const arm = ITEM_DB[run.armorId];
+        if (arm && arm.regen) {
+          run.hp = Math.min(run.maxHp, run.hp + arm.regen * 0.2);
+        }
+        if (run.hotTimer > 0) {
+          run.hotTimer = Math.max(0, run.hotTimer - 0.2);
+          run.hp = Math.min(run.maxHp, run.hp + run.hotRegen * 0.2);
+        }
+        if (run.kosmikImmuneCd > 0) run.kosmikImmuneCd = Math.max(0, run.kosmikImmuneCd - 0.2);
+        if (run.armorSkipCd > 0) run.armorSkipCd = Math.max(0, run.armorSkipCd - 0.2);
+        if (run.maxPermSpiritShield > 0 && run.permSpiritShield === 0) {
+          run.spiritOrbCd -= 0.2;
+          if (run.spiritOrbCd <= 0) {
+            run.permSpiritShield = run.maxPermSpiritShield;
+            showToast('🔮 Spirit Orb memulihkan +200 Shield!', 'info');
+          }
+        }
+
+        // Countdown 15 seconds
+        run.timerSec -= 0.2;
+        if (run.timerSec > 0 && run.timerSec <= 4.0) {
+          warnSubTick++;
+          if (warnSubTick % 5 === 0) SoundFX.timerWarn();
+        } else {
+          warnSubTick = 0;
+        }
+        if (run.timerSec <= 0) {
+          run.timerSec = 15.0;
+          if (run.roomEvent === 'combat') {
+            // Player idled 15s in combat -> Monster attacks with +30% to +45% bonus damage!
+            const bonusMult = 1.30 + Math.random() * 0.15;
+            addCombatLog(`⏰ Terdiam 15 detik! ${run.enemy.name} menyerang balik dengan +${Math.round((bonusMult - 1) * 100)}% bonus damage!`);
+            performEnemyAttack(bonusMult);
+          } else {
+            // Player idled 15s in exploration -> Forced random door!
+            const randDoorIdx = Math.floor(Math.random() * run.doors.length);
+            showToast('⏰ Diam 15 detik! Pintu acak terbuka paksa!', 'warn');
+            chooseDoor(randDoorIdx, true);
+          }
+        }
+        updateDungeonBars();
+      }, 200);
+    }
+
+    function updateDungeonBars() {
+      if (!run) return;
+      const hpBar = document.getElementById('hud-hp-bar');
+      const hpTxt = document.getElementById('hud-hp-txt');
+      const shTxt = document.getElementById('hud-sh-txt');
+      const tmBar = document.getElementById('hud-timer-bar');
+      const tmTxt = document.getElementById('hud-timer-txt');
+
+      if (hpBar) hpBar.style.width = `${Math.max(0, Math.min(100, (run.hp / run.maxHp) * 100))}%`;
+      if (hpTxt) hpTxt.textContent = `${Math.ceil(run.hp)}/${run.maxHp}`;
+      if (shTxt) shTxt.textContent = `${Math.ceil(run.shield + run.permSpiritShield)}`;
+      if (tmBar) {
+        const pct = Math.max(0, (run.timerSec / 15) * 100);
+        tmBar.style.width = `${pct}%`;
+        tmBar.className = `h-full transition-all duration-150 ${run.timerSec <= 5 ? 'bg-rose-500' : 'bg-amber-400'}`;
+      }
+      if (tmTxt) tmTxt.textContent = `${run.timerSec.toFixed(1)}s`;
+    }
+
+    function addCombatLog(msg) {
+      if (!run) return;
+      run.combatLog.unshift(msg);
+      if (run.combatLog.length > 5) run.combatLog.pop();
+    }
+
+    /* ==========================================================================
+       11. ROOM PROGRESSION, LOOT GENERATION & FLOOR 100 MECHANIC
+       ========================================================================== */
+    function chooseDoor(doorIndex, forced = false) {
+      if (!run || run.roomEvent === 'combat' || run.roomEvent === 'extracting') return;
+      if (!forced) SoundFX.door();
+
+      const chosen = run.doors[doorIndex] || { hintType: 'treasure' };
+      run.roomNum += 1;
+      run.compassActive = false;
+
+      // Invisibility potion skips monster encounters safely
+      if (run.invisRooms > 0) {
+        run.invisRooms--;
+        run.roomEvent = 'treasure';
+        run.roomTreasure = rollDungeonLoot();
+        addCombatLog(`👻 Efek Invisibility menyelinap melewati musuh & menemukan harta!`);
+        generateRoomDoors();
+        renderScreen();
+        return;
+      }
+
+      if (chosen.hintType === 'treasure') {
+        run.roomEvent = 'treasure';
+        run.roomTreasure = rollDungeonLoot();
+        addCombatLog(`Ruangan #${run.roomNum}: Menemukan peti harta karun!`);
+        generateRoomDoors();
+      } else {
+        spawnMonster(chosen.hintType === 'weak_monster' ? 0.78 : 1.05);
+      }
+      renderScreen();
+    }
+
+    function descendStairs() {
+      if (!run || run.roomEvent === 'combat') return;
+      SoundFX.stairs();
+      run.floor += 1;
+      run.roomNum = 1;
+      if (run.floor > player.stats.maxFloor) {
+        player.stats.maxFloor = run.floor;
+        saveGame();
+      }
+      run.roomEvent = 'empty';
+      run.roomTreasure = null;
+      addCombatLog(`🪜 Menuruni tangga menuju Lantai ${run.floor}! Monster lebih kuat, harta lebih langka.`);
+      generateRoomDoors(null, true);
+      renderScreen();
+    }
+
+    function useGodFloorSkip() {
+      if (!run || run.floorSkipsLeft <= 0 || run.roomEvent === 'combat') return;
+      run.floorSkipsLeft--;
+      showToast('👑 God Armor: Melompati langsung ke lantai berikutnya!', 'success');
+      descendStairs();
+    }
+
+    function useArmorRoomSkip() {
+      if (!run || run.armorSkipsLeft <= 0 || run.armorSkipCd > 0) return;
+      const arm = ITEM_DB[run.armorId];
+      run.armorSkipsLeft--;
+      run.armorSkipCd = arm.skipCd || 0;
+      run.roomEvent = 'empty';
+      run.enemy = null;
+      run.enemyDots = [];
+      run.roomNum += 1;
+      SoundFX.heal();
+      showToast(`🪽 ${arm.name}: Berhasil melewati ruangan dengan aman!`, 'success');
+      generateRoomDoors();
+      renderScreen();
+    }
+
+    function rollDungeonLoot() {
+      // Floor depth + Luck + Difficulty boost rare rates
+      const depthScore = run.floor * 1.4 + run.luck * 0.6 + (run.difficulty.lootMult - 1) * 28;
+      let targetRates = ['D', 'C'];
+
+      if (run.floor >= 100) {
+        // Floor 100: 60% SSS chance!
+        targetRates = Math.random() < 0.60 ? ['SSS', 'SSS+'] : ['SS', 'SS+', 'S+'];
+      } else if (depthScore >= 85) {
+        targetRates = ['A+', 'S', 'S+', 'SS', 'SS+'];
+      } else if (depthScore >= 45) {
+        targetRates = ['B+', 'A', 'A+', 'S'];
+      } else if (depthScore >= 18) {
+        targetRates = ['C', 'B', 'B+', 'A'];
+      }
+
+      const pool = Object.values(ITEM_DB).filter(it => targetRates.includes(it.rate));
+      const chosen = pool[Math.floor(Math.random() * pool.length)] || ITEM_DB.val_goblet;
+      return { uid: genUid(), itemId: chosen.id, chargesLeft: chosen.charges || null };
+    }
+
+    function collectRoomTreasure() {
+      if (!run || !run.roomTreasure) return;
+      const item = ITEM_DB[run.roomTreasure.itemId];
+      const cost = getItemSlots(item.id);
+      const used = calcUsedSlots(run.backpack);
+
+      if (used + cost > player.backpackCap) {
+        SoundFX.hit(false);
+        showToast(`Backpack penuh! Butuh ${cost} kotak (Tersisa ${player.backpackCap - used} kotak). Pindahkan ke Brangkas atau buang item!`, 'danger');
+        return;
+      }
+
+      if (item.id === 'garuda_token') {
+        const hasGaruda = [...run.backpack, ...run.safeBox].some(e => e.itemId === 'garuda_token');
+        if (hasGaruda) {
+          showToast('Hanya dapat membawa 1 Garuda Token tiap permainan!', 'warn');
+          return;
+        }
+      }
+
+      run.backpack.push(run.roomTreasure);
+      if (isRateAtLeast(item.rate, 'B+')) run.highLootFound += 1;
+      if (item.rate === 'SSS' || item.rate === 'SSS+') {
+        player.stats.gotSSS = true;
+        saveGame();
+      }
+      SoundFX.loot(isRateAtLeast(item.rate, 'S'));
+      showToast(`Mengambil ${item.name} [${item.rate}] ke Backpack!`, 'success');
+      run.roomTreasure = null;
+      run.roomEvent = 'empty';
+      renderScreen();
+    }
+
+    /* ==========================================================================
+       12. TURN-BASED COMBAT SYSTEM
+       ========================================================================== */
+    function spawnMonster(variance = 1.0) {
+      const eligible = MONSTERS_DB.filter(m => run.floor >= m.minF);
+      const proto = eligible[Math.floor(Math.random() * eligible.length)] || MONSTERS_DB[0];
+
+      const floorScale = 1 + (run.floor - 1) * 0.14;
+      const maxHp = Math.round(proto.baseHp * floorScale * run.difficulty.hpMult * variance);
+      const dmg = Math.round(proto.baseDmg * floorScale * run.difficulty.dmgMult * variance);
+
+      run.roomEvent = 'combat';
+      run.enemy = {
+        ...proto,
+        hp: maxHp,
+        maxHp,
+        dmg,
+        isBoss100: run.floor >= 100
+      };
+      run.enemyDots = [];
+      run.defending = false;
+      run.timerSec = 15.0; // Player always gets first turn!
+      addCombatLog(`⚔️ ${run.enemy.name} (Lt.${run.floor}) menghadang jalanmu! Giliranmu pertama!`);
+    }
+
+    function combatAttack(useOneSlashKill = false) {
+      if (!run || run.roomEvent !== 'combat') return;
+      run.defending = false;
+      const wep = ITEM_DB[run.weaponId] || { name: 'Tangan Kosong', dmg: 5, rate: 'D' };
+      const skin = SKINS_DB.find(s => s.id === player.selectedSkin) || SKINS_DB[0];
+
+      if (useOneSlashKill && run.skillUsesLeft > 0) {
+        run.skillUsesLeft--;
+        SoundFX.skill();
+        addCombatLog(`🐉 ONE SLASH ONE KILL! Tebasan naga hitam memusnahkan ${run.enemy.name} seketika!`);
+        run.enemy.hp = 0;
+        handleMonsterDefeated();
+        return;
+      }
+
+      const critChance = skin.id === 'shadow' ? 0.25 : 0.12;
+      const isCrit = Math.random() < critChance;
+      let totalDmg = Math.round(wep.dmg * run.atkMult * (isCrit ? 1.5 : 1.0));
+
+      run.enemy.hp = Math.max(0, run.enemy.hp - totalDmg);
+      const tierIdx = Math.max(0, RATE_ORDER.indexOf(wep.rate || 'D'));
+      SoundFX.attack(tierIdx, isCrit);
+      addCombatLog(`🗡️ Menyerang ${run.enemy.name} sebesar ${totalDmg} DMG${isCrit ? ' (CRIT!)' : ''}!`);
+
+      // Apply stackable DoT from weapon (Magma, Double Dagger, Excalibur, Nano Machine, Black Flame)
+      if (wep.dot) {
+        run.enemyDots.push({ ...wep.dot });
+        addCombatLog(`✨ Efek [${wep.dot.name}] aktif (${wep.dot.dmg}/detik, ${wep.dot.turns} detik - bertumpuk)!`);
+      }
+
+      if (run.enemy.hp <= 0) {
+        handleMonsterDefeated();
+        return;
+      }
+
+      // Trigger DoT ticks + Enemy Turn
+      processDotsAndEnemyTurn();
+    }
+
+    function combatDefense() {
+      if (!run || run.roomEvent !== 'combat') return;
+      SoundFX.defend();
+      run.defending = true;
+      // Small shield recovery on defense
+      const arm = ITEM_DB[run.armorId];
+      if (arm && run.shield < run.maxShield) {
+        run.shield = Math.min(run.maxShield, run.shield + Math.ceil(run.maxShield * 0.15));
+      }
+      addCombatLog(`🛡️ Bertahan! Mengurangi 65% damage musuh & memulihkan sedikit Shield.`);
+      processDotsAndEnemyTurn();
+    }
+
+    function combatRun() {
+      if (!run || run.roomEvent !== 'combat') return;
+      // Run loses 15% to 25% of current HP randomly and skips to random next room!
+      const lossPct = 0.15 + Math.random() * 0.10;
+      const hpLost = Math.max(1, Math.round(run.hp * lossPct));
+      run.hp = Math.max(1, run.hp - hpLost);
+      SoundFX.run();
+      showToast(`🏃 Kabur ke ruangan acak! Kehilangan ${Math.round(lossPct * 100)}% HP (-${hpLost} HP).`, 'warn');
+
+      run.enemy = null;
+      run.enemyDots = [];
+      run.roomEvent = 'empty';
+      run.roomNum += 1;
+      generateRoomDoors();
+      renderScreen();
+    }
+
+    function processDotsAndEnemyTurn() {
+      if (!run || !run.enemy) return;
+
+      // Apply stacked DoTs
+      if (run.enemyDots.length > 0) {
+        let dotTotal = 0;
+        let healFromSoul = 0;
+        run.enemyDots.forEach(d => {
+          dotTotal += d.dmg;
+          if (d.lifesteal) healFromSoul += Math.round(d.dmg * 0.4);
+          d.turns -= 1;
+        });
+        run.enemyDots = run.enemyDots.filter(d => d.turns > 0);
+        run.enemy.hp = Math.max(0, run.enemy.hp - dotTotal);
+        if (healFromSoul > 0) run.hp = Math.min(run.maxHp, run.hp + healFromSoul);
+        addCombatLog(`🔥 Efek elemen memberikan ${dotTotal} DMG tambahan!`);
+
+        if (run.enemy.hp <= 0) {
+          handleMonsterDefeated();
+          return;
+        }
+      }
+
+      // Enemy attacks
+      performEnemyAttack(1.0);
+    }
+
+    function performEnemyAttack(mult = 1.0) {
+      if (!run || !run.enemy) return;
+      const arm = ITEM_DB[run.armorId];
+
+      let incoming = Math.round(run.enemy.dmg * mult);
+      if (run.defending) {
+        incoming = Math.round(incoming * 0.35);
+        run.defending = false;
+      }
+
+      // Kosmik Armor immunity check (immune up to 200 dmg with 15s cooldown)
+      if (arm && arm.immuneThreshold && incoming <= arm.immuneThreshold && run.kosmikImmuneCd <= 0) {
+        run.kosmikImmuneCd = arm.immuneCd;
+        addCombatLog(`🌌 Kosmik Armor menangkis penuh ${incoming} DMG! (CD 15 detik)`);
+        run.timerSec = 15.0;
+        renderScreen();
+        return;
+      }
+
+      // Meteor Armor 5% reflect
+      if (arm && arm.reflect) {
+        const refDmg = Math.max(1, Math.round(incoming * arm.reflect));
+        run.enemy.hp = Math.max(0, run.enemy.hp - refDmg);
+        addCombatLog(`☄️ Meteor Armor memantulkan ${refDmg} DMG ke ${run.enemy.name}!`);
+        if (run.enemy.hp <= 0) {
+          handleMonsterDefeated();
+          return;
+        }
+      }
+
+      // Shield Points absorb damage first!
+      let rem = incoming;
+      if (run.permSpiritShield > 0) {
+        const absorbed = Math.min(run.permSpiritShield, rem);
+        run.permSpiritShield -= absorbed;
+        rem -= absorbed;
+        if (run.permSpiritShield === 0) run.spiritOrbCd = 120; // 2 min cooldown
+      }
+      if (rem > 0 && run.shield > 0) {
+        const absorbed = Math.min(run.shield, rem);
+        run.shield -= absorbed;
+        rem -= absorbed;
+      }
+
+      if (rem > 0) {
+        run.hp = Math.max(0, run.hp - rem);
+        SoundFX.hit(false);
+        const canvasWrap = document.getElementById('dungeon-canvas-wrap');
+        if (canvasWrap) {
+          canvasWrap.classList.remove('anim-shake');
+          void canvasWrap.offsetWidth;
+          canvasWrap.classList.add('anim-shake');
+        }
+      } else {
+        SoundFX.hit(true);
+      }
+
+      addCombatLog(`👹 ${run.enemy.name} menyerang (${incoming} DMG -> Sisa HP: ${Math.ceil(run.hp)}, Shield: ${Math.ceil(run.shield + run.permSpiritShield)}).`);
+
+      if (run.hp <= 0) {
+        handlePlayerDeath();
+        return;
+      }
+
+      // Return turn to player with fresh 15s timer
+      run.timerSec = 15.0;
+      renderScreen();
+    }
+
+    function handleMonsterDefeated() {
+      run.kills += 1;
+      player.stats.totalKills += 1;
+      saveGame();
+
+      const defeatedName = run.enemy.name;
+      const wasFloor100 = run.floor >= 100;
+      run.enemy = null;
+      run.enemyDots = [];
+      run.roomEvent = 'treasure';
+
+      // Drop loot! Floor 100 monsters have 60% chance to drop SSS item!
+      if (wasFloor100 && Math.random() < 0.60) {
+        const sssPool = Object.values(ITEM_DB).filter(i => i.rate === 'SSS' || i.rate === 'SSS+');
+        const pick = sssPool[Math.floor(Math.random() * sssPool.length)];
+        run.roomTreasure = { uid: genUid(), itemId: pick.id, chargesLeft: pick.charges || null };
+        SoundFX.loot(true);
+        addCombatLog(`🌟 ${defeatedName} Lantai 100 menjatuhkan item legendaris [${pick.name}] (Rate ${pick.rate})!`);
+      } else {
+        run.roomTreasure = rollDungeonLoot();
+        const dropIt = ITEM_DB[run.roomTreasure.itemId];
+        SoundFX.loot(dropIt && isRateAtLeast(dropIt.rate, 'S'));
+        addCombatLog(`🏆 ${defeatedName} dikalahkan! Menjatuhkan harta karun.`);
+      }
+
+      generateRoomDoors();
+      renderScreen();
+    }
+
+    /* ==========================================================================
+       13. CONSUMABLES, BRANGKAS (25-SLOT SAFE), EXTRACTION & DEATH
+       ========================================================================== */
+    function useConsumableInRun(uid) {
+      if (!run) return;
+      const idx = run.backpack.findIndex(e => e.uid === uid);
+      if (idx === -1) return;
+      const entry = run.backpack[idx];
+      const it = ITEM_DB[entry.itemId];
+      if (!it || it.type !== 'consumable') return;
+
+      if (it.id === 'garuda_token') {
+        showToast('Garuda Token aktif otomatis saat HP mencapai 0!', 'info');
+        return;
+      }
+
+      let consumeItem = true;
+
+      if (it.heal) {
+        run.hp = Math.min(run.maxHp, run.hp + it.heal);
+        SoundFX.heal();
+        addCombatLog(`💚 Menggunakan ${it.name}: +${it.heal} HP!`);
+      }
+      if (it.luckBonus) {
+        run.luck += it.luckBonus;
+        SoundFX.heal();
+        addCombatLog(`🍀 Menggunakan ${it.name}: +${it.luckBonus} Luck!`);
+      }
+      if (it.atkMult) {
+        run.atkMult = Math.max(run.atkMult, it.atkMult);
+        SoundFX.heal();
+        addCombatLog(`💪 Menggunakan ${it.name}: Serangan meningkat!`);
+      }
+      if (it.hotRegen) {
+        run.hotRegen = it.hotRegen;
+        run.hotTimer = it.hotDuration;
+        SoundFX.heal();
+        addCombatLog(`🏆 Holy Grail aktif: +2 HP/detik selama 2 menit!`);
+      }
+      if (it.permShield) {
+        run.maxPermSpiritShield = 200;
+        run.permSpiritShield = 200;
+        SoundFX.heal();
+        addCombatLog(`🔮 Spirit Orb aktif: +200 Shield permanen!`);
+      }
+      if (it.invisRooms) {
+        run.invisRooms += it.invisRooms;
+        SoundFX.heal();
+        addCombatLog(`👻 Menghilang dari monster selama ${it.invisRooms} ruangan!`);
+      }
+      if (it.effect === 'compass') {
+        if (run.roomEvent === 'combat') {
+          showToast('V Compas hanya bisa dipakai saat memilih pintu!', 'warn');
+          return;
+        }
+        run.compassActive = true;
+        entry.chargesLeft = (entry.chargesLeft || 5) - 1;
+        consumeItem = entry.chargesLeft <= 0;
+        SoundFX.heal();
+        showToast(`🧭 V Compas menyoroti pintu teraman! (Sisa: ${entry.chargesLeft}x)`, 'success');
+      }
+      if (it.effect === 'flute' || it.effect === 'clone') {
+        if (it.effect === 'flute') {
+          entry.chargesLeft = (entry.chargesLeft || 5) - 1;
+          consumeItem = entry.chargesLeft <= 0;
+        }
+        run.enemy = null;
+        run.enemyDots = [];
+        run.roomEvent = 'empty';
+        run.roomNum += 1;
+        SoundFX.heal();
+        showToast(`✨ ${it.name}: Melewati ruangan/monster tanpa kehilangan HP!`, 'success');
+        generateRoomDoors();
+      }
+
+      if (consumeItem) {
+        run.backpack.splice(idx, 1);
+      }
+
+      closeModal();
+      run.timerSec = 15.0;
+      renderScreen();
+    }
+
+    function openInRunBagModal() {
+      if (!run) return;
+      SoundFX.click();
+      const bpUsed = calcUsedSlots(run.backpack);
+      const safeUsed = calcUsedSlots(run.safeBox);
+      const inCombat = run.roomEvent === 'combat';
+
+      const renderList = (list, location) => {
+        if (list.length === 0) return `<div class="text-xs text-gray-500 py-2">Kosong</div>`;
+        return list.map(entry => {
+          const it = ITEM_DB[entry.itemId];
+          const slots = getItemSlots(it.id);
+          return `
+            <div class="p-2 rounded bg-[#120e18] border border-[#322545] flex items-center justify-between gap-2 text-sm">
+              <div class="min-w-0">
+                <div class="font-bold text-amber-100 truncate">${it.icon} ${it.name} <span class="text-[10px] px-1 rounded border rate-${it.rate}">${it.rate}</span></div>
+                <div class="text-[11px] text-gray-400">${slots} kotak ${entry.chargesLeft ? `(Sisa ${entry.chargesLeft}x)` : ''}</div>
+              </div>
+              <div class="flex gap-1 shrink-0">
+                ${location === 'bp' && it.type === 'consumable'
+                  ? `<button onclick="useConsumableInRun('${entry.uid}')" class="btn-pixel btn-emerald px-2 py-1 rounded text-xs">Pakai</button>` : ''}
+                ${!inCombat && location === 'bp'
+                  ? `<button onclick="moveRunItem('${entry.uid}', 'toSafe')" class="btn-pixel btn-cyan px-2 py-1 rounded text-xs">&rarr; Brangkas</button>` : ''}
+                ${!inCombat && location === 'safe'
+                  ? `<button onclick="moveRunItem('${entry.uid}', 'toBp')" class="btn-pixel px-2 py-1 rounded text-xs">&larr; Tas</button>` : ''}
+                ${!inCombat
+                  ? `<button onclick="dropRunItem('${entry.uid}', '${location}')" class="btn-pixel btn-crimson px-1.5 py-1 rounded text-xs">🗑️</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      };
+
+      openModal(
+        inCombat ? '🧪 Gunakan Item Pertarungan' : '🎒 Backpack & Brangkas Aman',
+        `
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs font-bold text-amber-300 mb-1">
+              <span>🎒 BACKPACK (Hilang jika mati)</span>
+              <span>${bpUsed} / ${player.backpackCap} Kotak</span>
+            </div>
+            <div class="space-y-1.5">${renderList(run.backpack, 'bp')}</div>
+          </div>
+
+          ${!inCombat ? `
+            <div class="pt-2 border-t border-[#322545]">
+              <div class="flex justify-between text-xs font-bold text-cyan-300 mb-1">
+                <span>🔐 BRANGKAS (Aman meski mati!)</span>
+                <span>${safeUsed} / 25 Kotak</span>
+              </div>
+              <div class="space-y-1.5">${renderList(run.safeBox, 'safe')}</div>
+            </div>
+          ` : ''}
+        </div>
+        `
+      );
+    }
+
+    function moveRunItem(uid, dir) {
+      if (!run || run.roomEvent === 'combat') return;
+      if (dir === 'toSafe') {
+        const idx = run.backpack.findIndex(e => e.uid === uid);
+        if (idx === -1) return;
+        const cost = getItemSlots(run.backpack[idx].itemId);
+        if (calcUsedSlots(run.safeBox) + cost > 25) {
+          showToast('Brangkas penuh! Maksimal 25 kotak.', 'danger');
+          return;
+        }
+        run.safeBox.push(run.backpack[idx]);
+        run.backpack.splice(idx, 1);
+      } else {
+        const idx = run.safeBox.findIndex(e => e.uid === uid);
+        if (idx === -1) return;
+        const cost = getItemSlots(run.safeBox[idx].itemId);
+        if (calcUsedSlots(run.backpack) + cost > player.backpackCap) {
+          showToast('Backpack penuh!', 'danger');
+          return;
+        }
+        run.backpack.push(run.safeBox[idx]);
+        run.safeBox.splice(idx, 1);
+      }
+      SoundFX.click();
+      openInRunBagModal();
+      renderScreen();
+    }
+
+    function dropRunItem(uid, loc) {
+      if (!run || run.roomEvent === 'combat') return;
+      const arr = loc === 'bp' ? run.backpack : run.safeBox;
+      const idx = arr.findIndex(e => e.uid === uid);
+      if (idx !== -1) arr.splice(idx, 1);
+      SoundFX.click();
+      openInRunBagModal();
+      renderScreen();
+    }
+
+    function isCareerTaskDone() {
+      if (!run || run.mode !== 'career' || !run.careerTarget) return true;
+      const t = run.careerTarget;
+      return run.floor >= t.targetFloor && run.kills >= t.targetKills && run.highLootFound >= t.targetHighLoot;
+    }
+
+    function triggerExtraction() {
+      if (!run || run.roomEvent === 'combat') return;
+      if (!isCareerTaskDone()) {
+        showToast('Selesaikan seluruh misi Karir terlebih dahulu sebelum Ekstraksi!', 'danger');
+        return;
+      }
+
+      SoundFX.extract();
+      run.roomEvent = 'extracting';
+      run.extractProgress = 0;
+      renderScreen();
+
+      // Dramatic light beam ascending extraction animation
+      const exInterval = setInterval(() => {
+        if (!run) { clearInterval(exInterval); return; }
+        run.extractProgress += 0.05;
+        if (run.extractProgress >= 1) {
+          clearInterval(exInterval);
+          completeExtraction();
+        }
+      }, 80);
+    }
+
+    function completeExtraction() {
+      // Transfer both Backpack & SafeBox items to Lobby Inventory!
+      const allLoot = [...run.backpack, ...run.safeBox];
+      allLoot.forEach(item => {
+        player.lobbyInventory.push({ uid: item.uid, itemId: item.itemId });
+      });
+
+      player.stats.extractions += 1;
+      let careerRewardMsg = '';
+
+      if (run.mode === 'career' && isCareerTaskDone() && run.careerTarget) {
+        player.gold += run.careerTarget.rewardGold;
+        player.lobbyInventory.push({ uid: genUid(), itemId: run.careerTarget.rewardItem });
+        careerRewardMsg = `<div class="p-2 rounded bg-amber-950/70 border border-amber-500 text-amber-200 text-sm">👑 Misi Karir Lv.${player.careerLevel} Selesai! +${run.careerTarget.rewardGold} Gold & ${ITEM_DB[run.careerTarget.rewardItem].name}!</div>`;
+        if (player.careerLevel < CAREER_LEVELS.length) {
+          player.careerLevel += 1;
+        }
+      }
+
+      saveGame();
+      stopAllRunTimers();
+
+      const summaryHtml = `
+        <div class="space-y-3 text-center">
+          <div class="text-4xl">✨🏰✨</div>
+          <div class="font-medieval font-bold text-xl text-amber-300">EKSTRAKSI BERHASIL!</div>
+          <p class="text-sm text-gray-300">Cahaya suci menarikmu keluar dari Lantai ${run.floor} dengan selamat.</p>
+          ${careerRewardMsg}
+          <div class="p-2.5 rounded bg-[#120e18] border border-[#36294a] text-left text-sm">
+            <div class="text-emerald-400 font-bold mb-1">Total Item Diamankan (${allLoot.length} item):</div>
+            <div class="max-h-32 overflow-y-auto space-y-1">
+              ${allLoot.length === 0 ? '<div class="text-gray-500">Tidak ada item dibawa.</div>' : allLoot.map(e => {
+                const it = ITEM_DB[e.itemId];
+                return `<div>${it.icon} ${it.name} <span class="text-xs text-amber-300">[${it.rate}]</span></div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      run = null;
+      navigate('lobby');
+      openModal('Laporan Ekstraksi', summaryHtml);
+    }
+
+    function handlePlayerDeath() {
+      // Check Garuda Token (Second life upon death!)
+      const garudaBpIdx = run.backpack.findIndex(e => e.itemId === 'garuda_token');
+      const garudaSafeIdx = run.safeBox.findIndex(e => e.itemId === 'garuda_token');
+
+      if (garudaBpIdx !== -1 || garudaSafeIdx !== -1) {
+        if (garudaBpIdx !== -1) run.backpack.splice(garudaBpIdx, 1);
+        else run.safeBox.splice(garudaSafeIdx, 1);
+
+        run.hp = Math.round(run.maxHp * 0.6);
+        run.shield = Math.round(run.maxShield * 0.6);
+        run.timerSec = 15.0;
+        SoundFX.extract();
+        showToast('🦅 GARUDA TOKEN AKTIF! Kamu bangkit kembali dari kematian!', 'success');
+        addCombatLog('🦅 Garuda Token bersinar dan membangkitkanmu kembali!');
+        renderScreen();
+        return;
+      }
+
+      // True Death: Backpack is LOST, SafeBox (Brangkas) items are SAVED!
+      SoundFX.gameover();
+      const savedFromSafe = [...run.safeBox];
+      savedFromSafe.forEach(item => {
+        player.lobbyInventory.push({ uid: item.uid, itemId: item.itemId });
+      });
+      const lostCount = run.backpack.length;
+      const reachedFloor = run.floor;
+
+      saveGame();
+      stopAllRunTimers();
+      run = null;
+      navigate('lobby');
+
+      openModal(
+        '💀 GUGUR DI KEGELAPAN',
+        `
+        <div class="space-y-3 text-center">
+          <div class="text-4xl">⚰️</div>
+          <div class="font-medieval font-bold text-lg text-rose-400">Petualangan Berakhir di Lantai ${reachedFloor}</div>
+          <p class="text-sm text-gray-300">${lostCount} item di dalam Backpack hilang ditelan kegelapan.</p>
+          <div class="p-2.5 rounded bg-[#11242b] border border-cyan-700 text-left text-sm">
+            <div class="text-cyan-300 font-bold mb-1">🔐 Item Terselamatkan di Brangkas (${savedFromSafe.length} item):</div>
+            ${savedFromSafe.length === 0
+              ? '<div class="text-gray-400 text-xs">Tidak ada item di Brangkas.</div>'
+              : savedFromSafe.map(e => `<div>${ITEM_DB[e.itemId].icon} ${ITEM_DB[e.itemId].name}</div>`).join('')
+            }
+          </div>
+        </div>
+        `
+      );
+    }
+
+    /* ==========================================================================
+       14. DUNGEON VIEW RENDERER & PIXEL ART CANVAS ENGINE
+       ========================================================================== */
+    function renderDungeonView(container) {
+      if (!run) return;
+      const arm = ITEM_DB[run.armorId];
+      const wep = ITEM_DB[run.weaponId];
+      const bpUsed = calcUsedSlots(run.backpack);
+      const safeUsed = calcUsedSlots(run.safeBox);
+      const canExtract = run.roomEvent !== 'combat' && run.roomEvent !== 'extracting' && isCareerTaskDone();
+
+      container.innerHTML = `
+        <div class="p-3 space-y-2.5 flex-1 flex flex-col">
+          <!-- TOP FLOOR & EXTRACTION BAR -->
+          <div class="flex items-center justify-between gap-2 bg-[#16121f] p-2 rounded-lg border border-[#36294a]">
+            <div>
+              <div class="text-xs text-purple-300 font-bold">${run.map.name} • Ruang #${run.roomNum}</div>
+              <div class="font-medieval font-bold text-amber-300 text-base">
+                LANTAI ${run.floor} ${run.floor >= 100 ? '🔥(SSS DROP 60%)' : ''}
+              </div>
+            </div>
+            <button onclick="triggerExtraction()" ${canExtract ? '' : 'disabled'}
+              class="btn-pixel ${canExtract ? 'btn-cyan glow-gold' : ''} px-3 py-2 rounded-lg text-xs font-bold">
+              ✨ EKSTRAKSI
+            </button>
+          </div>
+
+          <!-- CAREER TASK TRACKER (IF CAREER MODE) -->
+          ${run.mode === 'career' && run.careerTarget ? `
+            <div class="px-2.5 py-1.5 rounded bg-[#1f1810] border border-amber-600/60 text-xs flex items-center justify-between">
+              <span class="text-amber-200">🎯 Misi: Lt.${run.floor}/${run.careerTarget.targetFloor} • Kill ${run.kills}/${run.careerTarget.targetKills} • Loot B+ ${run.highLootFound}/${run.careerTarget.targetHighLoot}</span>
+              <span class="font-bold ${isCareerTaskDone() ? 'text-emerald-400' : 'text-rose-400'}">${isCareerTaskDone() ? 'SIAP EKSTRAKSI' : 'TERKUNCI'}</span>
+            </div>
+          ` : ''}
+
+          <!-- PLAYER HP, SHIELD & 15s TIMER -->
+          <div class="bg-[#14101c] p-2.5 rounded-lg border border-[#322545] space-y-1.5">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="text-emerald-400">❤️ HP: <span id="hud-hp-txt">${Math.ceil(run.hp)}/${run.maxHp}</span></span>
+              <span class="text-sky-400">🛡️ Shield: <span id="hud-sh-txt">${Math.ceil(run.shield + run.permSpiritShield)}</span></span>
+              <span class="text-amber-300">⏱️ <span id="hud-timer-txt">${run.timerSec.toFixed(1)}s</span></span>
+            </div>
+            <div class="w-full h-2.5 bg-[#09070d] rounded overflow-hidden border border-emerald-950">
+              <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all" style="width:${(run.hp / run.maxHp) * 100}%"></div>
+            </div>
+            <div class="w-full h-1.5 bg-[#09070d] rounded overflow-hidden">
+              <div id="hud-timer-bar" class="h-full bg-amber-400 transition-all" style="width:${(run.timerSec / 15) * 100}%"></div>
+            </div>
+          </div>
+
+          <!-- PIXEL ART SCENE CANVAS -->
+          <div id="dungeon-canvas-wrap" class="relative w-full h-48 rounded-xl border-2 border-[#46365e] bg-[#0b0910] overflow-hidden shadow-inner">
+            <canvas id="dungeon-canvas"></canvas>
+            ${run.roomEvent === 'combat' && run.enemy ? `
+              <div class="absolute top-2 right-2 bg-black/75 border border-rose-500/70 px-2.5 py-1 rounded text-right">
+                <div class="text-xs font-bold text-rose-300">${run.enemy.name}</div>
+                <div class="text-xs text-amber-300">HP: ${run.enemy.hp}/${run.enemy.maxHp} • ATK: ${run.enemy.dmg}</div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- COMBAT / EVENT LOG -->
+          <div class="bg-[#100d17] border border-[#2c213d] rounded-lg px-2.5 py-1.5 text-xs text-gray-300 space-y-0.5 max-h-20 overflow-y-auto">
+            ${run.combatLog.map((l, i) => `<div class="${i === 0 ? 'text-amber-200 font-bold' : 'opacity-70'}">&gt; ${l}</div>`).join('')}
+          </div>
+
+          <!-- INTERACTIVE ACTION PANEL (PURE CLICK / TAP) -->
+          <div class="flex-1 flex flex-col justify-end space-y-2">
+            ${run.roomEvent === 'combat' ? renderCombatControls(wep, arm) : renderExplorationControls(arm, bpUsed, safeUsed)}
+          </div>
+        </div>
+      `;
+
+      startDungeonCanvasLoop();
+    }
+
+    function renderCombatControls(wep, arm) {
+      return `
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="combatAttack(false)" class="btn-pixel btn-crimson py-3 px-2 rounded-xl font-medieval font-bold text-base flex items-center justify-center gap-1.5">
+            ⚔️ ATTACK
+          </button>
+          <button onclick="combatDefense()" class="btn-pixel btn-cyan py-3 px-2 rounded-xl font-medieval font-bold text-base flex items-center justify-center gap-1.5">
+            🛡️ DEFENSE
+          </button>
+          <button onclick="openInRunBagModal()" class="btn-pixel btn-emerald py-3 px-2 rounded-xl font-medieval font-bold text-base flex items-center justify-center gap-1.5">
+            🧪 ITEM (${run.backpack.filter(e => ITEM_DB[e.itemId]?.type === 'consumable').length})
+          </button>
+          <button onclick="combatRun()" class="btn-pixel py-3 px-2 rounded-xl font-medieval font-bold text-base flex items-center justify-center gap-1.5">
+            🏃 RUN (-15~25% HP)
+          </button>
+        </div>
+        ${wep && wep.specialSkill === 'one_slash_kill' && run.skillUsesLeft > 0 ? `
+          <button onclick="combatAttack(true)" class="btn-pixel btn-gold w-full py-2 rounded-lg text-xs font-bold">
+            🐉 SKILL: ONE SLASH ONE KILL (Sisa ${run.skillUsesLeft}/5)
+          </button>
+        ` : ''}
+        ${arm && arm.roomSkips && run.armorSkipsLeft > 0 ? `
+          <button onclick="useArmorRoomSkip()" ${run.armorSkipCd > 0 ? 'disabled' : ''} class="btn-pixel w-full py-1.5 rounded-lg text-xs text-purple-200">
+            🪽 ${arm.name} Skip Ruangan (${run.armorSkipsLeft}x) ${run.armorSkipCd > 0 ? `[CD ${Math.ceil(run.armorSkipCd)}s]` : ''}
+          </button>
+        ` : ''}
+      `;
+    }
+
+    function renderExplorationControls(arm, bpUsed, safeUsed) {
+      const showVision = run.compassActive || (arm && arm.oracleVision);
+      const treasureItem = run.roomTreasure ? ITEM_DB[run.roomTreasure.itemId] : null;
+
+      return `
+        <!-- TREASURE CHEST IF PRESENT -->
+        ${run.roomEvent === 'treasure' && treasureItem ? `
+          <button onclick="collectRoomTreasure()" class="btn-pixel btn-gold w-full p-2.5 rounded-xl flex items-center justify-between glow-gold">
+            <div class="flex items-center gap-2 text-left">
+              <span class="text-2xl">🎁</span>
+              <div>
+                <div class="text-xs text-amber-200">Peti Harta Ditemukan! Klik untuk Ambil:</div>
+                <div class="font-bold text-white">${treasureItem.icon} ${treasureItem.name} <span class="text-xs px-1 rounded border rate-${treasureItem.rate}">${treasureItem.rate}</span> (${getItemSlots(treasureItem.id)} kotak)</div>
+              </div>
+            </div>
+            <span class="text-sm font-bold">AMBIL &rarr;</span>
+          </button>
+        ` : ''}
+
+        <!-- DOOR CHOICES (1 TO 5 DOORS) -->
+        <div>
+          <div class="text-xs text-purple-300 mb-1 flex justify-between">
+            <span>🚪 Pilih Pintu Ruangan Berikutnya:</span>
+            ${showVision ? '<span class="text-emerald-400 font-bold">👁️ Penglihatan Aktif</span>' : ''}
+          </div>
+          <div class="grid grid-cols-${Math.min(run.doors.length, 3)} gap-2">
+            ${run.doors.map((d, idx) => `
+              <button onclick="chooseDoor(${idx})" class="btn-pixel py-2.5 px-1.5 rounded-xl flex flex-col items-center justify-center">
+                <span class="text-xl">🚪</span>
+                <span class="font-bold text-amber-200 text-sm">Pintu ${d.index}</span>
+                ${showVision ? `<span class="text-[11px] ${d.safetyPct >= 65 ? 'text-emerald-400' : 'text-amber-300'}">Aman ${d.safetyPct}%</span>` : ''}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- STAIRS & BAG CONTROLS -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          ${run.hasStairs ? `
+            <button onclick="descendStairs()" class="btn-pixel btn-crimson py-2.5 px-2 rounded-xl font-bold text-sm">
+              🪜 Tangga Turun (Lt.${run.floor + 1})
+            </button>
+          ` : `
+            <button onclick="openInRunBagModal()" class="btn-pixel btn-emerald py-2.5 px-2 rounded-xl font-bold text-sm">
+              🎒 Tas (${bpUsed}/${player.backpackCap})
+            </button>
+          `}
+
+          <button onclick="openInRunBagModal()" class="btn-pixel btn-cyan py-2.5 px-2 rounded-xl font-bold text-sm">
+            🔐 Brangkas (${safeUsed}/25)
+          </button>
+        </div>
+
+        ${arm && arm.floorSkips && run.floorSkipsLeft > 0 ? `
+          <button onclick="useGodFloorSkip()" class="btn-pixel btn-gold w-full py-1.5 rounded-lg text-xs font-bold">
+            👑 God Armor: Lompat ke Lantai ${run.floor + 1} (Sisa ${run.floorSkipsLeft}x)
+          </button>
+        ` : ''}
+      `;
+    }
+
+    /* ==========================================================================
+       15. MODERN PIXEL-ART CANVAS RENDERING (Lobby & Dungeon Scene)
+       ========================================================================== */
+    function drawPixelRect(ctx, x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+    }
+
+    function drawPixelHero(ctx, cx, cy, scale = 3, tick = 0) {
+      const skin = SKINS_DB.find(s => s.id === player.selectedSkin) || SKINS_DB[0];
+      const bob = Math.sin(tick * 0.08) * 2;
+      const y = cy + bob;
+
+      // Shadow
+      drawPixelRect(ctx, cx - 6 * scale, cy + 10 * scale, 12 * scale, 3 * scale, 'rgba(0,0,0,0.45)');
+      // Cape
+      drawPixelRect(ctx, cx - 5 * scale, y - 2 * scale, 10 * scale, 10 * scale, skin.cape);
+      // Body Armor
+      drawPixelRect(ctx, cx - 4 * scale, y - 2 * scale, 8 * scale, 8 * scale, skin.color);
+      // Helmet / Head
+      drawPixelRect(ctx, cx - 3.5 * scale, y - 8 * scale, 7 * scale, 6 * scale, '#cbd5e1');
+      // Visor
+      drawPixelRect(ctx, cx - 1 * scale, y - 6 * scale, 4 * scale, 2 * scale, '#0f172a');
+      // Sword in hand
+      drawPixelRect(ctx, cx + 5 * scale, y - 7 * scale, 2 * scale, 10 * scale, '#f8fafc');
+      drawPixelRect(ctx, cx + 3.5 * scale, y + 1 * scale, 5 * scale, 1.5 * scale, '#f59e0b');
+    }
+
+    function drawPixelMonster(ctx, cx, cy, enemy, scale = 3.4, tick = 0) {
+      const bob = Math.cos(tick * 0.1) * 2.5;
+      const y = cy + bob;
+
+      // Shadow
+      drawPixelRect(ctx, cx - 7 * scale, cy + 10 * scale, 14 * scale, 3 * scale, 'rgba(0,0,0,0.55)');
+      // Monster Body
+      drawPixelRect(ctx, cx - 6 * scale, y - 7 * scale, 12 * scale, 15 * scale, enemy.color);
+      // Horns / Crown
+      drawPixelRect(ctx, cx - 6 * scale, y - 10 * scale, 2 * scale, 3 * scale, '#94a3b8');
+      drawPixelRect(ctx, cx + 4 * scale, y - 10 * scale, 2 * scale, 3 * scale, '#94a3b8');
+      // Glowing Eyes
+      drawPixelRect(ctx, cx - 4 * scale, y - 4 * scale, 2.5 * scale, 2 * scale, enemy.eye);
+      drawPixelRect(ctx, cx + 1.5 * scale, y - 4 * scale, 2.5 * scale, 2 * scale, enemy.eye);
+      // Fangs
+      drawPixelRect(ctx, cx - 3 * scale, y + 2 * scale, 6 * scale, 2 * scale, '#fff');
+    }
+
+    function drawHeroPreview(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPixelHero(ctx, 40, 44, 3.2, 0);
+    }
+
+    function startDungeonCanvasLoop() {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      let tick = 0;
+
+      function loop() {
+        const canvas = document.getElementById('dungeon-canvas');
+        if (!canvas || !run) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        if (canvas.width !== Math.floor(rect.width) || canvas.height !== Math.floor(rect.height)) {
+          canvas.width = Math.floor(rect.width);
+          canvas.height = Math.floor(rect.height);
+        }
+
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+        tick++;
+
+        // Dungeon Stone Wall Background
+        ctx.fillStyle = run.map.theme;
+        ctx.fillRect(0, 0, W, H);
+
+        // Brick pattern
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        for (let row = 0; row < H; row += 24) {
+          const offset = (row / 24) % 2 === 0 ? 0 : 20;
+          for (let col = offset; col < W; col += 40) {
+            ctx.fillRect(col, row, 36, 20);
+          }
+        }
+
+        // Stone Floor
+        ctx.fillStyle = '#14111a';
+        ctx.fillRect(0, H * 0.72, W, H * 0.28);
+
+        // Flickering Medieval Torches
+        [W * 0.15, W * 0.85].forEach((tx, idx) => {
+          drawPixelRect(ctx, tx - 3, H * 0.35, 6, 18, '#78350f');
+          const flicker = Math.sin(tick * 0.25 + idx) * 3;
+          drawPixelRect(ctx, tx - 6, H * 0.27 - flicker * 0.5, 12, 12 + flicker, '#f97316');
+          drawPixelRect(ctx, tx - 3, H * 0.29, 6, 7, '#fef08a');
+        });
+
+        // Draw Doors in Background when exploring
+        if (run.roomEvent !== 'combat') {
+          const total = run.doors.length;
+          const spacing = W / (total + 1);
+          run.doors.forEach((d, i) => {
+            const dx = spacing * (i + 1);
+            const dy = H * 0.44;
+            drawPixelRect(ctx, dx - 16, dy, 32, 48, '#451a03');
+            drawPixelRect(ctx, dx - 12, dy + 4, 24, 44, '#78350f');
+            // Iron bands
+            drawPixelRect(ctx, dx - 12, dy + 14, 24, 3, '#334155');
+            drawPixelRect(ctx, dx - 12, dy + 32, 24, 3, '#334155');
+            // Compass / God Vision Aura
+            const arm = ITEM_DB[run.armorId];
+            if ((run.compassActive || (arm && arm.oracleVision)) && d.safetyPct >= 65) {
+              ctx.strokeStyle = '#34d399';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(dx - 18, dy - 2, 36, 52);
+            }
+          });
+        }
+
+        // Draw Hero on Left
+        drawPixelHero(ctx, W * 0.26, H * 0.62, 3.2, tick);
+
+        // Draw Treasure Chest or Monster on Right
+        if (run.roomEvent === 'treasure' && run.roomTreasure) {
+          const cx = W * 0.68, cy = H * 0.64;
+          drawPixelRect(ctx, cx - 18, cy - 12, 36, 24, '#92400e');
+          drawPixelRect(ctx, cx - 18, cy - 4, 36, 4, '#fbbf24');
+          drawPixelRect(ctx, cx - 4, cy - 6, 8, 8, '#fef08a');
+        } else if (run.roomEvent === 'combat' && run.enemy) {
+          drawPixelMonster(ctx, W * 0.72, H * 0.60, run.enemy, 3.5, tick);
+        }
+
+        // Extraction Light Beam Animation!
+        if (run.roomEvent === 'extracting') {
+          const beamW = 54 + Math.sin(tick * 0.4) * 8;
+          const grad = ctx.createLinearGradient(0, 0, 0, H);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.95)');
+          grad.addColorStop(0.6, 'rgba(250, 204, 21, 0.75)');
+          grad.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(W * 0.26 - beamW / 2, 0, beamW, H);
+        }
+
+        animFrameId = requestAnimationFrame(loop);
+      }
+      animFrameId = requestAnimationFrame(loop);
+    }
+
+    /* ==========================================================================
+       16. INITIALIZE APPLICATION ON WINDOW LOAD
+       ========================================================================== */
+    window.onload = function () {
+      loadGame();
+      renderScreen();
+    };
+  </script>
+</body>
+</html>
